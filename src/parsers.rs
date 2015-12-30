@@ -86,10 +86,10 @@ named!(pub io<IO>, alt!(
 
 
 #[cfg(test)]
-mod test {
+mod tests {
     use nom::IResult;
-    use ::parsers::*;
-    use ::command::*;
+    use super::*;
+    use command::*;
 
     macro_rules! nom_match {
         ( $parser: ident, $test: expr, $err: expr ) => {
