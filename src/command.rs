@@ -1,5 +1,8 @@
 
-use ::Literal;
+use Literal;
+
+/// Marker trait for commands
+pub trait Command {}
 
 #[derive(PartialEq, Eq, Clone, Debug)]
 pub enum IMP {
@@ -17,6 +20,7 @@ pub enum Stack {
     Swap,
     Pop,
 }
+impl Command for Stack {}
 
 #[derive(PartialEq, Eq, Clone, Debug)]
 pub enum Arithmetic {
@@ -26,12 +30,14 @@ pub enum Arithmetic {
     Divide,
     Modulus,
 }
+impl Command for Arithmetic {}
 
 #[derive(PartialEq, Eq, Clone, Debug)]
 pub enum Heap {
     Store,
     Retrieve,
 }
+impl Command for Heap {}
 
 #[derive(PartialEq, Eq, Clone, Debug)]
 pub enum Flow {
@@ -43,6 +49,7 @@ pub enum Flow {
     Return,
     Exit,
 }
+impl Command for Flow {}
 
 #[derive(PartialEq, Eq, Clone, Debug)]
 pub enum IO {
@@ -51,3 +58,4 @@ pub enum IO {
     ReadChar,
     ReadNum,
 }
+impl Command for IO {}

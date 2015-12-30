@@ -1,6 +1,6 @@
 
 use ::command::*;
-use ::Literal;
+use Literal;
 
 /// Identifies non-comment characters
 named!(pub legal_char, alt!(tag!(" ") | tag!("\t") | tag!("\n")));
@@ -99,7 +99,7 @@ mod test {
             };
         };
         ( $parser: ident, $test: expr, $expected: expr, $err: expr ) => {
-            assert!($expected == match $parser($test) {
+            assert_eq!($expected, match $parser($test) {
                 IResult::Done(_, n) => n,
                 _ => panic!($err),
             });
@@ -119,7 +119,7 @@ mod test {
         nom_match!(legal_char, b" ", "space not recognized");
         nom_match!(legal_char, b"\t", "tab not recognized");
         nom_match!(legal_char, b"\n", "newline not recognized");
-        
+
         nom_no_match!(legal_char, b"a", "a mistakenly recognized");
     }
 
@@ -153,7 +153,10 @@ mod test {
 
     #[test]
     fn test_stack() {
-        nom_match!(stack, b"  \t \t \t \n", Stack::Push(42), "string not parsed");
+        nom_match!(stack,
+                   b"  \t \t \t \n",
+                   Stack::Push(42),
+                   "string not parsed");
         nom_match!(stack, b"\n ", Stack::Copy, "string not parsed");
         nom_match!(stack, b"\n\t", Stack::Swap, "string not parsed");
         nom_match!(stack, b"\n\n", Stack::Pop, "string not parsed");
@@ -164,12 +167,23 @@ mod test {
     #[test]
     fn test_arithmetic() {
         nom_match!(arithmetic, b"  ", Arithmetic::Add, "string not parsed");
-        nom_match!(arithmetic, b" \t", Arithmetic::Subtract, "string not parsed");
-        nom_match!(arithmetic, b" \n", Arithmetic::Multiply, "string not parsed");
+        nom_match!(arithmetic,
+                   b" \t",
+                   Arithmetic::Subtract,
+                   "string not parsed");
+        nom_match!(arithmetic,
+                   b" \n",
+                   Arithmetic::Multiply,
+                   "string not parsed");
         nom_match!(arithmetic, b"\t ", Arithmetic::Divide, "string not parsed");
-        nom_match!(arithmetic, b"\t\t", Arithmetic::Modulus, "string not parsed");
+        nom_match!(arithmetic,
+                   b"\t\t",
+                   Arithmetic::Modulus,
+                   "string not parsed");
 
-        nom_no_match!(arithmetic, b"\t\n", "\"\\t\\n\" mistakenly identified as arithmetic");
+        nom_no_match!(arithmetic,
+                      b"\t\n",
+                      "\"\\t\\n\" mistakenly identified as arithmetic");
     }
 
     #[test]
@@ -186,7 +200,10 @@ mod test {
         nom_match!(flow, b" \t \t\n", Flow::Call(1), "string not parsed");
         nom_match!(flow, b" \n \t\n", Flow::Jump(1), "string not parsed");
         nom_match!(flow, b"\t  \t\n", Flow::JumpZero(1), "string not parsed");
-        nom_match!(flow, b"\t\t \t\n", Flow::JumpNegative(1), "string not parsed");
+        nom_match!(flow,
+                   b"\t\t \t\n",
+                   Flow::JumpNegative(1),
+                   "string not parsed");
         nom_match!(flow, b"\t\n", Flow::Return, "string not parsed");
         nom_match!(flow, b"\n\n", Flow::Exit, "string not parsed");
 

@@ -1,6 +1,6 @@
 
 use libc as c;
-use std::mem::{uninitialized, transmute, forget};
+use std::mem::{forget, transmute, uninitialized};
 use std::ops::{Index, IndexMut};
 
 extern {
@@ -70,7 +70,9 @@ impl Into<JitFunction> for JitMemory {
     fn into(self) -> JitFunction {
         // Mark the function as executable, but not writable.
         unsafe {
-            c::mprotect(transmute(self.contents), self.size, c::PROT_READ | c::PROT_EXEC);
+            c::mprotect(transmute(self.contents),
+                        self.size,
+                        c::PROT_READ | c::PROT_EXEC);
             let function = JitFunction {
                 contents: transmute(self.contents),
                 size: self.size,
@@ -86,7 +88,9 @@ impl Into<JitMemory> for JitFunction {
     fn into(self) -> JitMemory {
         // Mark the function as writable, but not executable.
         unsafe {
-            c::mprotect(transmute(self.contents), self.size, c::PROT_READ | c::PROT_WRITE);
+            c::mprotect(transmute(self.contents),
+                        self.size,
+                        c::PROT_READ | c::PROT_WRITE);
             let memory = JitMemory {
                 contents: transmute(self.contents),
                 size: self.size,
@@ -105,9 +109,7 @@ impl Index<usize> for JitMemory {
         if _index > self.size {
             panic!("index {} out of bounds for JitMemory", _index);
         }
-        unsafe {
-            &*self.contents.offset(_index as isize)
-        }
+        unsafe { &*self.contents.offset(_index as isize) }
     }
 }
 
@@ -116,8 +118,6 @@ impl IndexMut<usize> for JitMemory {
         if _index > self.size {
             panic!("index {} out of bounds for JitMemory", _index);
         }
-        unsafe {
-            &mut *self.contents.offset(_index as isize)
-        }
+        unsafe { &mut *self.contents.offset(_index as isize) }
     }
 }
