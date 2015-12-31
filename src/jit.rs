@@ -18,6 +18,11 @@ pub struct JitFunction {
 }
 
 impl JitMemory {
+
+    pub fn get_page_size() -> usize {
+        unsafe { c::sysconf(c::_SC_PAGESIZE) as usize }
+    }
+
     pub fn new(num_pages: usize) -> Self {
         unsafe {
             let page_size = c::sysconf(c::_SC_PAGESIZE) as usize;
@@ -120,4 +125,32 @@ impl IndexMut<usize> for JitMemory {
         }
         unsafe { &mut *self.contents.offset(_index as isize) }
     }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    fn check_output(program: &[u8], output: i64) {
+        let mut memory = JitMemory::new(program.len() / JitMemory::get_page_size() + 1);
+
+        for (i, byte) in program.iter().enumerate() {
+            memory[i] = *byte;
+        }
+
+        let function: JitFunction = memory.into();
+        assert_eq!(output, function.execute());
+    }
+
+    #[test]
+    fn test_jit() {
+        check_output(&[0x48, 0xC7, 0xC0, 0x20, 0x00, 0x00, 0x00,    // mov rax, 0x20
+                       0x48, 0x83, 0xC0, 0x0A,                      // add rax, 0x0A
+                       0x48, 0x83, 0xE8, 0x0A,                      // sub rax, 0x0A
+                       0xC3], 32);                                  // ret
+        check_output(&[0x48, 0xC7, 0xC0, 0x20, 0x00, 0x00, 0x00,    // mov rax, 0x20
+                       0x48, 0x83, 0xC0, 0x0A,                      // add rax, 0x0A
+                       0xC3], 42);                                  // ret
+    }
+
 }
