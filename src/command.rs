@@ -1,9 +1,6 @@
 
 use Literal;
 
-/// Marker trait for commands
-pub trait Command {}
-
 #[derive(PartialEq, Eq, Clone, Debug)]
 pub enum IMP {
     Stack,
@@ -14,33 +11,25 @@ pub enum IMP {
 }
 
 #[derive(PartialEq, Eq, Clone, Debug)]
-pub enum Stack {
+pub enum Command {
+    // Stack commands
     Push(Literal),
     Copy,
     Swap,
     Pop,
-}
-impl Command for Stack {}
 
-#[derive(PartialEq, Eq, Clone, Debug)]
-pub enum Arithmetic {
+    // Arithmetic commands
     Add,
     Subtract,
     Multiply,
     Divide,
     Modulus,
-}
-impl Command for Arithmetic {}
 
-#[derive(PartialEq, Eq, Clone, Debug)]
-pub enum Heap {
+    // Heap commands
     Store,
     Retrieve,
-}
-impl Command for Heap {}
 
-#[derive(PartialEq, Eq, Clone, Debug)]
-pub enum Flow {
+    // Flow control commands
     Mark(Literal),
     Call(Literal),
     Jump(Literal),
@@ -48,14 +37,10 @@ pub enum Flow {
     JumpNegative(Literal),
     Return,
     Exit,
-}
-impl Command for Flow {}
 
-#[derive(PartialEq, Eq, Clone, Debug)]
-pub enum IO {
+    // IO commands
     OutputChar,
     OutputNum,
     ReadChar,
     ReadNum,
 }
-impl Command for IO {}

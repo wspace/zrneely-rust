@@ -1,5 +1,5 @@
 
-use ::command::*;
+use command::*;
 use Literal;
 
 /// Identifies non-comment characters
@@ -43,45 +43,45 @@ named!(pub imp<IMP>, alt!(
 ));
 
 /// Identifies a stack instruction.
-named!(pub stack<Stack>, alt!(
-    map!(preceded!(tag!(" "), literal), |n| Stack::Push(n)) |
-    map!(tag!("\n "), |_| Stack::Copy) |
-    map!(tag!("\n\t"), |_| Stack::Swap) |
-    map!(tag!("\n\n"), |_| Stack::Pop)
+named!(pub stack<Command>, alt!(
+    map!(preceded!(tag!(" "), literal), |n| Command::Push(n)) |
+    map!(tag!("\n "), |_| Command::Copy) |
+    map!(tag!("\n\t"), |_| Command::Swap) |
+    map!(tag!("\n\n"), |_| Command::Pop)
 ));
 
 /// Identifies a arithmetic instruction.
-named!(pub arithmetic<Arithmetic>, alt!(
-    map!(tag!("  "), |_| Arithmetic::Add) |
-    map!(tag!(" \t"), |_| Arithmetic::Subtract) |
-    map!(tag!(" \n"), |_| Arithmetic::Multiply) |
-    map!(tag!("\t "), |_| Arithmetic::Divide) |
-    map!(tag!("\t\t"), |_| Arithmetic::Modulus)
+named!(pub arithmetic<Command>, alt!(
+    map!(tag!("  "), |_| Command::Add) |
+    map!(tag!(" \t"), |_| Command::Subtract) |
+    map!(tag!(" \n"), |_| Command::Multiply) |
+    map!(tag!("\t "), |_| Command::Divide) |
+    map!(tag!("\t\t"), |_| Command::Modulus)
 ));
 
 /// Identifies a heap instruction.
-named!(pub heap<Heap>, alt!(
-    map!(tag!(" "), |_| Heap::Store) |
-    map!(tag!("\t"), |_| Heap::Retrieve)
+named!(pub heap<Command>, alt!(
+    map!(tag!(" "), |_| Command::Store) |
+    map!(tag!("\t"), |_| Command::Retrieve)
 ));
 
 /// Identifies a flow control instruction.
-named!(pub flow<Flow>, alt!(
-    map!(preceded!(tag!("  "), literal), |n| Flow::Mark(n)) |
-    map!(preceded!(tag!(" \t"), literal), |n| Flow::Call(n)) |
-    map!(preceded!(tag!(" \n"), literal), |n| Flow::Jump(n)) |
-    map!(preceded!(tag!("\t "), literal), |n| Flow::JumpZero(n)) |
-    map!(preceded!(tag!("\t\t"), literal), |n| Flow::JumpNegative(n)) |
-    map!(tag!("\t\n"), |_| Flow::Return) |
-    map!(tag!("\n\n"), |_| Flow::Exit)
+named!(pub flow<Command>, alt!(
+    map!(preceded!(tag!("  "), literal), |n| Command::Mark(n)) |
+    map!(preceded!(tag!(" \t"), literal), |n| Command::Call(n)) |
+    map!(preceded!(tag!(" \n"), literal), |n| Command::Jump(n)) |
+    map!(preceded!(tag!("\t "), literal), |n| Command::JumpZero(n)) |
+    map!(preceded!(tag!("\t\t"), literal), |n| Command::JumpNegative(n)) |
+    map!(tag!("\t\n"), |_| Command::Return) |
+    map!(tag!("\n\n"), |_| Command::Exit)
 ));
 
 /// Identifies an IO instruction.
-named!(pub io<IO>, alt!(
-    map!(tag!("  "), |_| IO::OutputChar) |
-    map!(tag!(" \t"), |_| IO::OutputNum) |
-    map!(tag!("\t "), |_| IO::ReadChar) |
-    map!(tag!("\t\t"), |_| IO::ReadNum)
+named!(pub io<Command>, alt!(
+    map!(tag!("  "), |_| Command::OutputChar) |
+    map!(tag!(" \t"), |_| Command::OutputNum) |
+    map!(tag!("\t "), |_| Command::ReadChar) |
+    map!(tag!("\t\t"), |_| Command::ReadNum)
 ));
 
 
@@ -155,30 +155,30 @@ mod tests {
     fn test_stack() {
         nom_match!(stack,
                    b"  \t \t \t \n",
-                   Stack::Push(42),
+                   Command::Push(42),
                    "string not parsed");
-        nom_match!(stack, b"\n ", Stack::Copy, "string not parsed");
-        nom_match!(stack, b"\n\t", Stack::Swap, "string not parsed");
-        nom_match!(stack, b"\n\n", Stack::Pop, "string not parsed");
+        nom_match!(stack, b"\n ", Command::Copy, "string not parsed");
+        nom_match!(stack, b"\n\t", Command::Swap, "string not parsed");
+        nom_match!(stack, b"\n\n", Command::Pop, "string not parsed");
 
         nom_no_match!(stack, b" \t ", "\" \\t\" mistakenly identified as stack");
     }
 
     #[test]
     fn test_arithmetic() {
-        nom_match!(arithmetic, b"  ", Arithmetic::Add, "string not parsed");
+        nom_match!(arithmetic, b"  ", Command::Add, "string not parsed");
         nom_match!(arithmetic,
                    b" \t",
-                   Arithmetic::Subtract,
+                   Command::Subtract,
                    "string not parsed");
         nom_match!(arithmetic,
                    b" \n",
-                   Arithmetic::Multiply,
+                   Command::Multiply,
                    "string not parsed");
-        nom_match!(arithmetic, b"\t ", Arithmetic::Divide, "string not parsed");
+        nom_match!(arithmetic, b"\t ", Command::Divide, "string not parsed");
         nom_match!(arithmetic,
                    b"\t\t",
-                   Arithmetic::Modulus,
+                   Command::Modulus,
                    "string not parsed");
 
         nom_no_match!(arithmetic,
@@ -188,35 +188,40 @@ mod tests {
 
     #[test]
     fn test_heap() {
-        nom_match!(heap, b" ", Heap::Store, "string not parsed");
-        nom_match!(heap, b"\t", Heap::Retrieve, "string not parsed");
+        nom_match!(heap, b" ", Command::Store, "string not parsed");
+        nom_match!(heap, b"\t", Command::Retrieve, "string not parsed");
 
         nom_no_match!(heap, b"\n", "\"\\n\" mistakenly identified as heap");
     }
 
     #[test]
     fn test_flow() {
-        nom_match!(flow, b"   \t\n", Flow::Mark(1), "string not parsed");
-        nom_match!(flow, b" \t \t\n", Flow::Call(1), "string not parsed");
-        nom_match!(flow, b" \n \t\n", Flow::Jump(1), "string not parsed");
-        nom_match!(flow, b"\t  \t\n", Flow::JumpZero(1), "string not parsed");
+        nom_match!(flow, b"   \t\n", Command::Mark(1), "string not parsed");
+        nom_match!(flow, b" \t \t\n", Command::Call(1), "string not parsed");
+        nom_match!(flow, b" \n \t\n", Command::Jump(1), "string not parsed");
+        nom_match!(flow, b"\t  \t\n", Command::JumpZero(1), "string not parsed");
         nom_match!(flow,
                    b"\t\t \t\n",
-                   Flow::JumpNegative(1),
+                   Command::JumpNegative(1),
                    "string not parsed");
-        nom_match!(flow, b"\t\n", Flow::Return, "string not parsed");
-        nom_match!(flow, b"\n\n", Flow::Exit, "string not parsed");
+        nom_match!(flow, b"\t\n", Command::Return, "string not parsed");
+        nom_match!(flow, b"\n\n", Command::Exit, "string not parsed");
 
         nom_no_match!(flow, b"\n ", "\"\\n \" mistakenly identified as flow");
     }
 
     #[test]
     fn test_io() {
-        nom_match!(io, b"  ", IO::OutputChar, "string not parsed");
-        nom_match!(io, b" \t", IO::OutputNum, "string not parsed");
-        nom_match!(io, b"\t ", IO::ReadChar, "string not parsed");
-        nom_match!(io, b"\t\t", IO::ReadNum, "string not parsed");
+        nom_match!(io, b"  ", Command::OutputChar, "string not parsed");
+        nom_match!(io, b" \t", Command::OutputNum, "string not parsed");
+        nom_match!(io, b"\t ", Command::ReadChar, "string not parsed");
+        nom_match!(io, b"\t\t", Command::ReadNum, "string not parsed");
 
         nom_no_match!(io, b"\n\n", "\"\\n\\n\" mistakenly identified as io");
+    }
+
+    #[test]
+    fn test_command() {
+        nom_match!(command, b"\n\n\n", Command::Exit, "string not parsed");
     }
 }

@@ -7,9 +7,6 @@ mod jit;
 mod parsers;
 mod command;
 
-use parsers::*;
-use command::*;
-
 pub type Literal = i64;
 
 fn main() {
