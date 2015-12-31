@@ -48,6 +48,13 @@ impl JitMemory {
             }
         }
     }
+
+    /// Copies a slice into memory
+    pub fn copy_from(&mut self, data: &[u8]) {
+        for (i, byte) in data.iter().enumerate() {
+            self[i] = *byte;
+        }
+    }
 }
 
 impl Drop for JitMemory {
@@ -135,9 +142,7 @@ mod tests {
     fn check_output(program: &[u8], output: i64) {
         let mut memory = JitMemory::new(program.len() / JitMemory::get_page_size() + 1);
 
-        for (i, byte) in program.iter().enumerate() {
-            memory[i] = *byte;
-        }
+        memory.copy_from(program);
 
         let function: JitFunction = memory.into();
         assert_eq!(output, function.execute());

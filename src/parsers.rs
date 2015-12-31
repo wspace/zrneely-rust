@@ -3,8 +3,7 @@ use command::*;
 use Literal;
 
 // TODO properly handle "comments" aka non-legal characters, which should be
-// ignored per the
-// spec.
+// ignored per the spec.
 
 /// Identifies non-comment characters
 named!(pub legal_char, alt!(tag!(" ") | tag!("\t") | tag!("\n")));
@@ -263,13 +262,11 @@ mod tests {
 
         nom_match!(program,
                    b"\t\n \t   \t \t \n\t\n     \t\n\t   ",
-                   vec![
-                Command::OutputNum,
-                Command::Push(10),
-                Command::OutputChar,
-                Command::Push(1),
-                Command::Add,
-        ],
+                   vec![Command::OutputNum,
+                        Command::Push(10),
+                        Command::OutputChar,
+                        Command::Push(1),
+                        Command::Add],
                    "string not parsed");
     }
 }

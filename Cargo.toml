@@ -9,3 +9,11 @@ version = "*"
 [dependencies.nom]
 version = "*"
 path = "../nom"
+
+[lib]
+name = "wsstd"
+path = "src/wsstd.rs"
+
+[[bin]]
+name = "whitespace"
+path = "src/main.rs"
