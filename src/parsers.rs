@@ -2,6 +2,10 @@
 use command::*;
 use Literal;
 
+// TODO properly handle "comments" aka non-legal characters, which should be
+// ignored per the
+// spec.
+
 /// Identifies non-comment characters
 named!(pub legal_char, alt!(tag!(" ") | tag!("\t") | tag!("\n")));
 
@@ -11,9 +15,9 @@ named!(pub literal_char<bool>, map!(
         |c: &[u8]| { c[0] == b"\t"[0] })
 );
 
-/// Identifies a literal. All literals are represented signed numbers 
-/// of arbitrary width. We violate the spec a little here by imposing 
-/// a maximum width of 64 characters.
+/// Identifies a literal. All literals are represented as signed
+/// numbers of arbitrary width. We violate the spec a little here by
+/// imposing a maximum width of 64 characters.
 named!(pub literal<Literal>, map!(
         terminated!(
             many1!(literal_char),
@@ -92,13 +96,13 @@ mod tests {
     use command::*;
 
     macro_rules! nom_match {
-        ( $parser: ident, $test: expr, $err: expr ) => {
+        ($parser: ident, $test: expr, $err: expr) => {
             match $parser($test) {
                 IResult::Done(_, _) => {},
                 _ => panic!($err),
             };
         };
-        ( $parser: ident, $test: expr, $expected: expr, $err: expr ) => {
+        ($parser: ident, $test: expr, $expected: expr, $err: expr) => {
             assert_eq!($expected, match $parser($test) {
                 IResult::Done(_, n) => n,
                 _ => panic!($err),
@@ -106,7 +110,7 @@ mod tests {
         };
     }
     macro_rules! nom_no_match {
-        ( $parser: ident, $test: expr, $err: expr ) => {
+        ($parser: ident, $test: expr, $err: expr) => {
             match $parser($test) {
                 IResult::Done(_, _) => panic!($err),
                 _ => {},
@@ -167,19 +171,10 @@ mod tests {
     #[test]
     fn test_arithmetic() {
         nom_match!(arithmetic, b"  ", Command::Add, "string not parsed");
-        nom_match!(arithmetic,
-                   b" \t",
-                   Command::Subtract,
-                   "string not parsed");
-        nom_match!(arithmetic,
-                   b" \n",
-                   Command::Multiply,
-                   "string not parsed");
+        nom_match!(arithmetic, b" \t", Command::Subtract, "string not parsed");
+        nom_match!(arithmetic, b" \n", Command::Multiply, "string not parsed");
         nom_match!(arithmetic, b"\t ", Command::Divide, "string not parsed");
-        nom_match!(arithmetic,
-                   b"\t\t",
-                   Command::Modulus,
-                   "string not parsed");
+        nom_match!(arithmetic, b"\t\t", Command::Modulus, "string not parsed");
 
         nom_no_match!(arithmetic,
                       b"\t\n",
