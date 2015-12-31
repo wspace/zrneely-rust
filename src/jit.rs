@@ -144,6 +144,7 @@ mod tests {
     }
 
     #[test]
+    #[cfg_attr(rustfmt, rustfmt_skip)]
     fn test_jit() {
         check_output(&[0x48, 0xC7, 0xC0, 0x20, 0x00, 0x00, 0x00,    // mov rax, 0x20
                        0x48, 0x83, 0xC0, 0x0A,                      // add rax, 0x0A
