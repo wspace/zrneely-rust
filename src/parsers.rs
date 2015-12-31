@@ -90,11 +90,11 @@ named!(pub io<Command>, alt!(
 
 /// Identifies an entire command.
 named!(pub command<Command>, switch!(imp,
-    IMP::Stack => stack |
-    IMP::Heap => heap |
-    IMP::Arithmetic => arithmetic |
-    IMP::Flow => flow |
-    IMP::IO => io
+    IMP::Stack => call!(stack) |
+    IMP::Heap => call!(heap) |
+    IMP::Arithmetic => call!(arithmetic) |
+    IMP::Flow => call!(flow) |
+    IMP::IO => call!(io)
 ));
 
 #[cfg(test)]
@@ -225,6 +225,14 @@ mod tests {
 
     #[test]
     fn test_command() {
+        // Test a few of the commands: if all the other tests pass, this should be
+        // sufficient.
         nom_match!(command, b"\n\n\n", Command::Exit, "string not parsed");
+        nom_match!(command, b"\t  \t", Command::Subtract, "string not parsed");
+        nom_match!(command, b"   \t \t \n", Command::Push(10), "string not parsed");
+        nom_match!(command, b"\n   \t    \t\t\n", Command::Mark(67), "string not parsed");
+        nom_match!(command, b"\n\t  \t   \t \t\n", Command::JumpZero(69), "string not parsed");
+
+        nom_no_match!(command, b"\t\n \n", "\"\\t\\n \\t\" mistakenly identified as command");
     }
 }

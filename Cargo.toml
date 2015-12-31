@@ -3,6 +3,9 @@ name = "whitespace"
 version = "0.1.0"
 authors = ["zrneely <zrneely@mit.edu>"]
 
-[dependencies]
-libc = "*"
-nom = "*"
+[dependencies.libc]
+version = "*"
+
+[dependencies.nom]
+version = "*"
+path = "../nom"
