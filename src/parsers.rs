@@ -88,6 +88,14 @@ named!(pub io<Command>, alt!(
     map!(tag!("\t\t"), |_| Command::ReadNum)
 ));
 
+/// Identifies an entire command.
+named!(pub command<Command>, switch!(imp,
+    IMP::Stack => stack |
+    IMP::Heap => heap |
+    IMP::Arithmetic => arithmetic |
+    IMP::Flow => flow |
+    IMP::IO => io
+));
 
 #[cfg(test)]
 mod tests {
