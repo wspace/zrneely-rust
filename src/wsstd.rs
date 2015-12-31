@@ -12,10 +12,7 @@ pub type Literal = i64;
 #[repr(C)]
 pub struct Context {
     // "exported" function pointers usable by the jit-ed code
-    pub fn0: *const c::c_void,
-    pub fn1: *const c::c_void,
-    pub fn2: *const c::c_void,
-    pub fn3: *const c::c_void,
+    pub fns: [*const c::c_void; 4],
 
     stack: Vec<Literal>,
     heap: HashMap<Literal, Literal>,
@@ -26,18 +23,16 @@ pub struct Context {
 
 impl fmt::Debug for Context {
     fn fmt(&self, formatter: &mut fmt::Formatter) -> Result<(), fmt::Error> {
+        try!(write!(formatter, "Context {{\n\t fns: ("));
+        for ptr in self.fns.iter() {
+            try!(write!(formatter, "{:p}, ", ptr));
+        }
         write!(formatter,
-               "Context {{\
-               \n\t fns: ({:p}, {:p}, {:p}, {:p})\
-               \n\t stack: {:?}\
+               ")\n\t stack: {:?}\
                \n\t heap: {:?}\
                \n\t call stack: {:?}\
                \n\t labels: {:?}\
                \n}}",
-               self.fn0,
-               self.fn1,
-               self.fn2,
-               self.fn3,
                self.stack,
                self.heap,
                self.call_stack,
@@ -54,10 +49,10 @@ impl Context {
             call_stack: Vec::new(),
             labels: HashMap::new(),
 
-            fn0: Context::__push_stack as *const c::c_void,
-            fn1: Context::__pop_stack as *const c::c_void,
-            fn2: Context::__store as *const c::c_void,
-            fn3: Context::__retrieve as *const c::c_void,
+            fns: [Context::__push_stack as *const c::c_void,
+                  Context::__pop_stack as *const c::c_void,
+                  Context::__store as *const c::c_void,
+                  Context::__retrieve as *const c::c_void],
         }
     }
 
