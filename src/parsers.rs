@@ -232,29 +232,44 @@ mod tests {
         // sufficient.
         nom_match!(command, b"\n\n\n", Command::Exit, "string not parsed");
         nom_match!(command, b"\t  \t", Command::Subtract, "string not parsed");
-        nom_match!(command, b"   \t \t \n", Command::Push(10), "string not parsed");
-        nom_match!(command, b"\n   \t    \t\t\n", Command::Mark(67), "string not parsed");
-        nom_match!(command, b"\n\t  \t   \t \t\n", Command::JumpZero(69), "string not parsed");
+        nom_match!(command,
+                   b"   \t \t \n",
+                   Command::Push(10),
+                   "string not parsed");
+        nom_match!(command,
+                   b"\n   \t    \t\t\n",
+                   Command::Mark(67),
+                   "string not parsed");
+        nom_match!(command,
+                   b"\n\t  \t   \t \t\n",
+                   Command::JumpZero(69),
+                   "string not parsed");
 
-        nom_no_match!(command, b"\t\n \n", "\"\\t\\n \\t\" mistakenly identified as command");
+        nom_no_match!(command,
+                      b"\t\n \n",
+                      "\"\\t\\n \\t\" mistakenly identified as command");
     }
 
     #[test]
     fn test_program() {
-        nom_match!(program, b"   \t\n\n   \t    \t\t\n \n  \n\n\n\n\n", vec![
-                Command::Push(1),
-                Command::Mark(67),
-                Command::Copy,
-                Command::Pop,
-                Command::Exit
-        ], "string not parsed");
+        nom_match!(program,
+                   b"   \t\n\n   \t    \t\t\n \n  \n\n\n\n\n",
+                   vec![Command::Push(1),
+                        Command::Mark(67),
+                        Command::Copy,
+                        Command::Pop,
+                        Command::Exit],
+                   "string not parsed");
 
-        nom_match!(program, b"\t\n \t   \t \t \n\t\n     \t\n\t   ", vec![
+        nom_match!(program,
+                   b"\t\n \t   \t \t \n\t\n     \t\n\t   ",
+                   vec![
                 Command::OutputNum,
                 Command::Push(10),
                 Command::OutputChar,
                 Command::Push(1),
                 Command::Add,
-        ], "string not parsed");
+        ],
+                   "string not parsed");
     }
 }

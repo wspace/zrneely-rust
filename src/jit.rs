@@ -24,8 +24,9 @@ impl JitMemory {
     }
 
     pub fn new(num_pages: usize) -> Self {
+        let page_size = JitMemory::get_page_size();
+
         unsafe {
-            let page_size = c::sysconf(c::_SC_PAGESIZE) as usize;
             let size = num_pages * page_size;
 
             // Let's allocate space for the JIT function.
