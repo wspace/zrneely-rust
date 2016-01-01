@@ -9,6 +9,8 @@ mod jit;
 mod parsers;
 mod command;
 
+use nom::IResult;
+
 use command::Command;
 use jit::{JitFunction, JitMemory};
 use wsstd::Context;
@@ -29,14 +31,23 @@ fn get_native_function(program: Vec<Command>) -> JitFunction {
 }
 
 fn main() {
-    // This should be all that really needs to happen:
+    println!("{:?}", Context::new());
+
+
+    let input_file = unimplemented!();
+    let input = unimplemented!();
 
     // println!("Parsing input...");
-    // let program = parsers::program(read_input_file());
-    // println!("Compiling...");
-    // let program = get_native_function(program);
-    // println!("Running:");
-    // program.execute(Context::new());
-
-    println!("{:?}", Context::new());
+    let program = match parsers::program(input) {
+        IResult::Done(_, program) => {
+            program.insert(0, Command::Initialize);
+            program
+        },
+        // TODO better error handling
+        _ => panic!("Invalid program!"),
+    };
+    println!("Compiling...");
+    let program = get_native_function(program);
+    println!("Running:");
+    program.execute(Context::new());
 }

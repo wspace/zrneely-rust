@@ -12,6 +12,12 @@ pub type Literal = i64;
 #[repr(C)]
 pub struct Context {
     // "exported" function pointers usable by the jit-ed code
+    // offset + 0x00: push to stack
+    // offset + 0x08: pop from stack
+    // offset + 0x10: store in heap
+    // offset + 0x18: retrieve from heap
+    // offset + 0x20: store label
+    // offset + 0x28: get pointer to label
     pub fns: [*const c::c_void; 6],
 
     stack: Vec<Literal>,

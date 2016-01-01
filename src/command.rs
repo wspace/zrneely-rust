@@ -12,6 +12,10 @@ pub enum IMP {
 
 #[derive(PartialEq, Eq, Clone, Debug)]
 pub enum Command {
+
+    // Meta commands
+    Initialize,
+
     // Stack commands
     Push(Literal),
     Copy,
@@ -79,6 +83,10 @@ impl Command {
     /// in the file
     pub fn assemble(self) -> Vec<u8> {
         match self {
+            Command::Initialize => vec![
+                // TODO what needs to happen?
+                unimplemented!(),
+            ],
             Command::Push(n) => vec![
                 // __push_stack(n)
                 unimplemented!(),

@@ -3,6 +3,8 @@ use libc as c;
 use std::mem::{forget, transmute, uninitialized};
 use std::ops::{Index, IndexMut};
 
+use wsstd::Context;
+
 extern {
     fn memset(s: *mut c::c_void, c: c::uint32_t, n: c::size_t) -> *mut c::c_void;
 }
@@ -13,7 +15,7 @@ pub struct JitMemory {
 }
 
 pub struct JitFunction {
-    contents: fn() -> i64,
+    contents: fn(*mut Context) -> i64,
     size: usize,
 }
 
@@ -74,8 +76,8 @@ impl Drop for JitFunction {
 }
 
 impl JitFunction {
-    pub fn execute(&self) -> i64 {
-        (self.contents)()
+    pub fn execute(&self, mut context: Context) -> i64 {
+        (self.contents)(&mut context as *mut Context)
     }
 }
 
@@ -159,5 +161,4 @@ mod tests {
                        0x48, 0x83, 0xC0, 0x0A,                      // add rax, 0x0A
                        0xC3], 42);                                  // ret
     }
-
 }
