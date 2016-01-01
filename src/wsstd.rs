@@ -18,7 +18,9 @@ pub struct Context {
     // offset + 0x18: retrieve from heap
     // offset + 0x20: store label
     // offset + 0x28: get pointer to label
-    pub fns: [*const c::c_void; 6],
+    // offset + 0x30: print data
+    // offset + 0x38: read data
+    fns: [*const c::c_void; 8],
 
     stack: Vec<Literal>,
     heap: HashMap<Literal, Literal>,
@@ -60,7 +62,9 @@ impl Context {
                   Context::__store as *const c::c_void,
                   Context::__retrieve as *const c::c_void,
                   Context::__store_label as *const c::c_void,
-                  Context::__retrieve_label as *const c::c_void],
+                  Context::__retrieve_label as *const c::c_void,
+                  Context::__print as *const c::c_void,
+                  Context::__read as *const c::c_void],
         }
     }
 
@@ -104,6 +108,29 @@ impl Context {
     #[no_mangle]
     pub unsafe extern "C" fn __retrieve_label(&self, name: Literal) -> *const c::c_void {
        *self.labels.get(&name).unwrap()
+    }
+
+    /// Called from jit-ed code. Displays data to stdout.
+    #[no_mangle]
+    pub unsafe extern "C" fn __print(data: Literal, is_char: bool) {
+        if is_char {
+            // TODO
+            unimplemented!()
+        } else {
+            println!("{}", data);
+        }
+    }
+
+    /// Called from jit-ed code. Reads data from stdin.
+    #[no_mangle]
+    pub unsafe extern "C" fn __read(is_char: bool) -> Literal {
+        if is_char {
+            // TODO
+            unimplemented!()
+        } else {
+            // TODO
+            unimplemented!()
+        }
     }
 
 }

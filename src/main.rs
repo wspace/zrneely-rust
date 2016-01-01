@@ -39,7 +39,7 @@ fn main() {
 
     // println!("Parsing input...");
     let program = match parsers::program(input) {
-        IResult::Done(_, program) => {
+        IResult::Done(_, mut program) => {
             program.insert(0, Command::Initialize);
             program
         },
