@@ -12,11 +12,11 @@ pub type Literal = i64;
 #[repr(C)]
 pub struct Context {
     // "exported" function pointers usable by the jit-ed code
-    pub fns: [*const c::c_void; 4],
+    pub fns: [*const c::c_void; 6],
 
     stack: Vec<Literal>,
     heap: HashMap<Literal, Literal>,
-    call_stack: Vec<Literal>,
+    call_stack: Vec<Literal>, // TODO can we use the native call/return functionality and stack?
     // maps literals to jump-to-able addresses in the function
     labels: HashMap<Literal, *const c::c_void>,
 }
@@ -52,7 +52,9 @@ impl Context {
             fns: [Context::__push_stack as *const c::c_void,
                   Context::__pop_stack as *const c::c_void,
                   Context::__store as *const c::c_void,
-                  Context::__retrieve as *const c::c_void],
+                  Context::__retrieve as *const c::c_void,
+                  Context::__store_label as *const c::c_void,
+                  Context::__retrieve_label as *const c::c_void],
         }
     }
 
@@ -84,6 +86,18 @@ impl Context {
     #[no_mangle]
     pub unsafe extern "C" fn __retrieve(&self, name: Literal) -> Literal {
         *self.heap.get(&name).unwrap()
+    }
+
+    /// Called from jit-ed code. Stores a label.
+    #[no_mangle]
+    pub unsafe extern "C" fn __store_label(&mut self, name: Literal, ptr: *const c::c_void) {
+        self.labels.insert(name, ptr);
+    }
+
+    /// Called from jit-ed code. Retrieves a label.
+    #[no_mangle]
+    pub unsafe extern "C" fn __retrieve_label(&self, name: Literal) -> *const c::c_void {
+       *self.labels.get(&name).unwrap()
     }
 
 }

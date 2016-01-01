@@ -31,8 +31,12 @@ fn get_native_function(program: Vec<Command>) -> JitFunction {
 fn main() {
     // This should be all that really needs to happen:
 
+    // println!("Parsing input...");
     // let program = parsers::program(read_input_file());
-    // get_native_function(program).execute(Context::new());
+    // println!("Compiling...");
+    // let program = get_native_function(program);
+    // println!("Running:");
+    // program.execute(Context::new());
 
     println!("{:?}", Context::new());
 }

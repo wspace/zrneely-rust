@@ -94,14 +94,18 @@ impl Command {
             Command::Swap => vec![
                 // rax = __pop_stack()
                 unimplemented!(),
-                // mov rdx, rax ; TODO do we need to push/pop rdx? should we use a different
-                // register? should I know more assembly before doing this? yes hahaha :(
+                // mov rdx, rax ; TODO do I need to push/pop rdx? Should I use a different
+                // register? Should I know more assembly before doing this? Yes hahaha :(
                 0x48, 0x89, 0xC2,
                 // rax = __pop_stack()
                 unimplemented!(),
                 // __push_stack(rax)
                 unimplemented!(),
                 // __push_stack(rdx)
+                unimplemented!(),
+            ],
+            Command::Pop => vec![
+                // __pop_stack()
                 unimplemented!(),
             ],
             _ => unimplemented!(),
