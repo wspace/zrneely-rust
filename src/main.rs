@@ -42,7 +42,7 @@ fn main() {
         IResult::Done(_, mut program) => {
             program.insert(0, Command::Initialize);
             program
-        },
+        }
         // TODO better error handling
         _ => panic!("Invalid program!"),
     };

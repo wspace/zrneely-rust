@@ -107,7 +107,7 @@ impl Context {
     /// Called from jit-ed code. Retrieves a label.
     #[no_mangle]
     pub unsafe extern "C" fn __retrieve_label(&self, name: Literal) -> *const c::c_void {
-       *self.labels.get(&name).unwrap()
+        *self.labels.get(&name).unwrap()
     }
 
     /// Called from jit-ed code. Displays data to stdout.

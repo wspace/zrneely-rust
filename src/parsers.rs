@@ -105,6 +105,8 @@ mod tests {
     use super::*;
     use command::*;
 
+    const NP: &'static str = "string not parsed";
+
     macro_rules! nom_match {
         ($parser: ident, $test: expr, $err: expr) => {
             match $parser($test) {
@@ -147,9 +149,9 @@ mod tests {
 
     #[test]
     fn test_literal() {
-        nom_match!(literal, b" \t  \n", 4, "string not parsed");
-        nom_match!(literal, b" \t \t\n", 5, "string not parsed");
-        nom_match!(literal, b"\t\t \t \t \n", -42, "string not parsed");
+        nom_match!(literal, b" \t  \n", 4, NP);
+        nom_match!(literal, b" \t \t\n", 5, NP);
+        nom_match!(literal, b"\t\t \t \t \n", -42, NP);
 
         nom_no_match!(literal, b"\n \n", "newline literal mistakenly recognized");
     }
@@ -158,33 +160,30 @@ mod tests {
     fn test_imp() {
         // Note: no negative tests possible since all combinations
         // of legal characters will match.
-        nom_match!(imp, b"   \t\n", IMP::Stack, "string not parsed");
-        nom_match!(imp, b"\n\n\n", IMP::Flow, "string not parsed");
-        nom_match!(imp, b"\t   ", IMP::Arithmetic, "string not parsed");
-        nom_match!(imp, b"\t\t  \t\n", IMP::Heap, "string not parsed");
-        nom_match!(imp, b"\t\n  ", IMP::IO, "string not parsed");
+        nom_match!(imp, b"   \t\n", IMP::Stack, NP);
+        nom_match!(imp, b"\n\n\n", IMP::Flow, NP);
+        nom_match!(imp, b"\t   ", IMP::Arithmetic, NP);
+        nom_match!(imp, b"\t\t  \t\n", IMP::Heap, NP);
+        nom_match!(imp, b"\t\n  ", IMP::IO, NP);
     }
 
     #[test]
     fn test_stack() {
-        nom_match!(stack,
-                   b"  \t \t \t \n",
-                   Command::Push(42),
-                   "string not parsed");
-        nom_match!(stack, b"\n ", Command::Copy, "string not parsed");
-        nom_match!(stack, b"\n\t", Command::Swap, "string not parsed");
-        nom_match!(stack, b"\n\n", Command::Pop, "string not parsed");
+        nom_match!(stack, b"  \t \t \t \n", Command::Push(42), NP);
+        nom_match!(stack, b"\n ", Command::Copy, NP);
+        nom_match!(stack, b"\n\t", Command::Swap, NP);
+        nom_match!(stack, b"\n\n", Command::Pop, NP);
 
         nom_no_match!(stack, b" \t ", "\" \\t\" mistakenly identified as stack");
     }
 
     #[test]
     fn test_arithmetic() {
-        nom_match!(arithmetic, b"  ", Command::Add, "string not parsed");
-        nom_match!(arithmetic, b" \t", Command::Subtract, "string not parsed");
-        nom_match!(arithmetic, b" \n", Command::Multiply, "string not parsed");
-        nom_match!(arithmetic, b"\t ", Command::Divide, "string not parsed");
-        nom_match!(arithmetic, b"\t\t", Command::Modulus, "string not parsed");
+        nom_match!(arithmetic, b"  ", Command::Add, NP);
+        nom_match!(arithmetic, b" \t", Command::Subtract, NP);
+        nom_match!(arithmetic, b" \n", Command::Multiply, NP);
+        nom_match!(arithmetic, b"\t ", Command::Divide, NP);
+        nom_match!(arithmetic, b"\t\t", Command::Modulus, NP);
 
         nom_no_match!(arithmetic,
                       b"\t\n",
@@ -193,34 +192,31 @@ mod tests {
 
     #[test]
     fn test_heap() {
-        nom_match!(heap, b" ", Command::Store, "string not parsed");
-        nom_match!(heap, b"\t", Command::Retrieve, "string not parsed");
+        nom_match!(heap, b" ", Command::Store, NP);
+        nom_match!(heap, b"\t", Command::Retrieve, NP);
 
         nom_no_match!(heap, b"\n", "\"\\n\" mistakenly identified as heap");
     }
 
     #[test]
     fn test_flow() {
-        nom_match!(flow, b"   \t\n", Command::Mark(1), "string not parsed");
-        nom_match!(flow, b" \t \t\n", Command::Call(1), "string not parsed");
-        nom_match!(flow, b" \n \t\n", Command::Jump(1), "string not parsed");
-        nom_match!(flow, b"\t  \t\n", Command::JumpZero(1), "string not parsed");
-        nom_match!(flow,
-                   b"\t\t \t\n",
-                   Command::JumpNegative(1),
-                   "string not parsed");
-        nom_match!(flow, b"\t\n", Command::Return, "string not parsed");
-        nom_match!(flow, b"\n\n", Command::Exit, "string not parsed");
+        nom_match!(flow, b"   \t\n", Command::Mark(1), NP);
+        nom_match!(flow, b" \t \t\n", Command::Call(1), NP);
+        nom_match!(flow, b" \n \t\n", Command::Jump(1), NP);
+        nom_match!(flow, b"\t  \t\n", Command::JumpZero(1), NP);
+        nom_match!(flow, b"\t\t \t\n", Command::JumpNegative(1), NP);
+        nom_match!(flow, b"\t\n", Command::Return, NP);
+        nom_match!(flow, b"\n\n", Command::Exit, NP);
 
         nom_no_match!(flow, b"\n ", "\"\\n \" mistakenly identified as flow");
     }
 
     #[test]
     fn test_io() {
-        nom_match!(io, b"  ", Command::OutputChar, "string not parsed");
-        nom_match!(io, b" \t", Command::OutputNum, "string not parsed");
-        nom_match!(io, b"\t ", Command::ReadChar, "string not parsed");
-        nom_match!(io, b"\t\t", Command::ReadNum, "string not parsed");
+        nom_match!(io, b"  ", Command::OutputChar, NP);
+        nom_match!(io, b" \t", Command::OutputNum, NP);
+        nom_match!(io, b"\t ", Command::ReadChar, NP);
+        nom_match!(io, b"\t\t", Command::ReadNum, NP);
 
         nom_no_match!(io, b"\n\n", "\"\\n\\n\" mistakenly identified as io");
     }
@@ -229,20 +225,11 @@ mod tests {
     fn test_command() {
         // Test a few of the commands: if all the other tests pass, this should be
         // sufficient.
-        nom_match!(command, b"\n\n\n", Command::Exit, "string not parsed");
-        nom_match!(command, b"\t  \t", Command::Subtract, "string not parsed");
-        nom_match!(command,
-                   b"   \t \t \n",
-                   Command::Push(10),
-                   "string not parsed");
-        nom_match!(command,
-                   b"\n   \t    \t\t\n",
-                   Command::Mark(67),
-                   "string not parsed");
-        nom_match!(command,
-                   b"\n\t  \t   \t \t\n",
-                   Command::JumpZero(69),
-                   "string not parsed");
+        nom_match!(command, b"\n\n\n", Command::Exit, NP);
+        nom_match!(command, b"\t  \t", Command::Subtract, NP);
+        nom_match!(command, b"   \t \t \n", Command::Push(10), NP);
+        nom_match!(command, b"\n   \t    \t\t\n", Command::Mark(67), NP);
+        nom_match!(command, b"\n\t  \t   \t \t\n", Command::JumpZero(69), NP);
 
         nom_no_match!(command,
                       b"\t\n \n",
@@ -258,7 +245,7 @@ mod tests {
                         Command::Copy,
                         Command::Pop,
                         Command::Exit],
-                   "string not parsed");
+                   NP);
 
         nom_match!(program,
                    b"\t\n \t   \t \t \n\t\n     \t\n\t   ",
@@ -267,6 +254,6 @@ mod tests {
                         Command::OutputChar,
                         Command::Push(1),
                         Command::Add],
-                   "string not parsed");
+                   NP);
     }
 }

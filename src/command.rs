@@ -12,7 +12,6 @@ pub enum IMP {
 
 #[derive(PartialEq, Eq, Clone, Debug)]
 pub enum Command {
-
     // Meta commands
     Initialize,
 
