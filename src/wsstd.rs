@@ -8,6 +8,7 @@ use std::fmt;
 
 pub type Number = i64;
 pub type Address = *const c::c_void;
+
 #[derive(Clone, Debug, Hash, Eq, PartialEq)]
 pub enum Label {
     Name(Vec<bool>),
@@ -15,8 +16,13 @@ pub enum Label {
 }
 
 impl Label {
-    fn replace(self, mapping: &Context) -> Label {
-        unimplemented!()
+    fn replace(self, mapping: &HashMap<Vec<bool>, Address>) -> Option<Label> {
+        if let Label::Name(name) = self {
+            mapping.get(&name)
+                   .map(|&addr| Label::Translated(addr))
+        } else {
+            Some(self)
+        }
     }
 }
 
