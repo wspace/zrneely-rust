@@ -1,6 +1,6 @@
 
 use command::*;
-use Literal;
+use {Number, Label};
 
 // TODO properly handle "comments" aka non-legal characters, which should be
 // ignored per the spec.
@@ -14,10 +14,10 @@ named!(pub literal_char<bool>, map!(
         |c: &[u8]| { c[0] == b"\t"[0] })
 );
 
-/// Identifies a literal. All literals are represented as signed
-/// numbers of arbitrary width. We violate the spec a little here by
+/// Identifies a number. All numbers are represented as signed
+/// integers of arbitrary width. We violate the spec a little here by
 /// imposing a maximum width of 64 characters.
-named!(pub literal<Literal>, map!(
+named!(pub number<Number>, map!(
         terminated!(
             many1!(literal_char),
             tag!("\n")
@@ -36,6 +36,12 @@ named!(pub literal<Literal>, map!(
         })
 );
 
+/// Identifies a label.
+named!(pub label<Label>, terminated!(
+    many1!(literal_char),
+    tag!("\n")
+));
+
 /// Identifies an IMP.
 named!(pub imp<IMP>, alt!(
     map!(tag!(" "), |_| IMP::Stack) |
@@ -47,7 +53,7 @@ named!(pub imp<IMP>, alt!(
 
 /// Identifies a stack instruction.
 named!(pub stack<Command>, alt!(
-    map!(preceded!(tag!(" "), literal), |n| Command::Push(n)) |
+    map!(preceded!(tag!(" "), number), |n| Command::Push(n)) |
     map!(tag!("\n "), |_| Command::Copy) |
     map!(tag!("\n\t"), |_| Command::Swap) |
     map!(tag!("\n\n"), |_| Command::Pop)
@@ -70,11 +76,11 @@ named!(pub heap<Command>, alt!(
 
 /// Identifies a flow control instruction.
 named!(pub flow<Command>, alt!(
-    map!(preceded!(tag!("  "), literal), |n| Command::Mark(n)) |
-    map!(preceded!(tag!(" \t"), literal), |n| Command::Call(n)) |
-    map!(preceded!(tag!(" \n"), literal), |n| Command::Jump(n)) |
-    map!(preceded!(tag!("\t "), literal), |n| Command::JumpZero(n)) |
-    map!(preceded!(tag!("\t\t"), literal), |n| Command::JumpNegative(n)) |
+    map!(preceded!(tag!("  "), label), |n| Command::Mark(n)) |
+    map!(preceded!(tag!(" \t"), label), |n| Command::Call(n)) |
+    map!(preceded!(tag!(" \n"), label), |n| Command::Jump(n)) |
+    map!(preceded!(tag!("\t "), label), |n| Command::JumpZero(n)) |
+    map!(preceded!(tag!("\t\t"), label), |n| Command::JumpNegative(n)) |
     map!(tag!("\t\n"), |_| Command::Return) |
     map!(tag!("\n\n"), |_| Command::Exit)
 ));
@@ -148,12 +154,12 @@ mod tests {
     }
 
     #[test]
-    fn test_literal() {
-        nom_match!(literal, b" \t  \n", 4, NP);
-        nom_match!(literal, b" \t \t\n", 5, NP);
-        nom_match!(literal, b"\t\t \t \t \n", -42, NP);
+    fn test_number() {
+        nom_match!(number, b" \t  \n", 4, NP);
+        nom_match!(number, b" \t \t\n", 5, NP);
+        nom_match!(number, b"\t\t \t \t \n", -42, NP);
 
-        nom_no_match!(literal, b"\n \n", "newline literal mistakenly recognized");
+        nom_no_match!(number, b"\n \n", "newline literal mistakenly recognized");
     }
 
     #[test]
@@ -200,11 +206,11 @@ mod tests {
 
     #[test]
     fn test_flow() {
-        nom_match!(flow, b"   \t\n", Command::Mark(1), NP);
-        nom_match!(flow, b" \t \t\n", Command::Call(1), NP);
-        nom_match!(flow, b" \n \t\n", Command::Jump(1), NP);
-        nom_match!(flow, b"\t  \t\n", Command::JumpZero(1), NP);
-        nom_match!(flow, b"\t\t \t\n", Command::JumpNegative(1), NP);
+        nom_match!(flow, b"   \t\n", Command::Mark(vec![false, true]), NP);
+        nom_match!(flow, b" \t \t\n", Command::Call(vec![false, true]), NP);
+        nom_match!(flow, b" \n \t\n", Command::Jump(vec![false, true]), NP);
+        nom_match!(flow, b"\t  \t\n", Command::JumpZero(vec![false, true]), NP);
+        nom_match!(flow, b"\t\t \t\n", Command::JumpNegative(vec![false, true]), NP);
         nom_match!(flow, b"\t\n", Command::Return, NP);
         nom_match!(flow, b"\n\n", Command::Exit, NP);
 
@@ -228,8 +234,8 @@ mod tests {
         nom_match!(command, b"\n\n\n", Command::Exit, NP);
         nom_match!(command, b"\t  \t", Command::Subtract, NP);
         nom_match!(command, b"   \t \t \n", Command::Push(10), NP);
-        nom_match!(command, b"\n   \t    \t\t\n", Command::Mark(67), NP);
-        nom_match!(command, b"\n\t  \t   \t \t\n", Command::JumpZero(69), NP);
+        nom_match!(command, b"\n   \t    \t\t\n", Command::Mark(vec![false, true, false, false, false, false, true, true]), NP);
+        nom_match!(command, b"\n\t  \t   \t \t\n", Command::JumpZero(vec![false, true, false, false, false, true, false, true]), NP);
 
         nom_no_match!(command,
                       b"\t\n \n",
@@ -241,7 +247,7 @@ mod tests {
         nom_match!(program,
                    b"   \t\n\n   \t    \t\t\n \n  \n\n\n\n\n",
                    vec![Command::Push(1),
-                        Command::Mark(67),
+                        Command::Mark(vec![false, true, false, false, false, false, true, true]),
                         Command::Copy,
                         Command::Pop,
                         Command::Exit],

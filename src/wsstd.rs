@@ -6,7 +6,9 @@ use libc as c;
 use std::collections::HashMap;
 use std::fmt;
 
-pub type Literal = i64;
+pub type Number = i64;
+pub type Label = Vec<bool>;
+pub type Address = *const c::c_void;
 
 /// The context of a running program.
 #[repr(C)]
@@ -20,13 +22,12 @@ pub struct Context {
     // offset + 0x28: get pointer to label
     // offset + 0x30: print data
     // offset + 0x38: read data
-    fns: [*const c::c_void; 8],
+    fns: [Address; 8],
 
-    stack: Vec<Literal>,
-    heap: HashMap<Literal, Literal>,
-    call_stack: Vec<Literal>, // TODO can we use the native call/return functionality and stack?
+    stack: Vec<Number>,
+    heap: HashMap<Label, Number>,
     // maps literals to jump-to-able addresses in the function
-    labels: HashMap<Literal, *const c::c_void>,
+    labels: HashMap<Label, Address>,
 }
 
 impl fmt::Debug for Context {
@@ -38,12 +39,10 @@ impl fmt::Debug for Context {
         write!(formatter,
                ")\n\t stack: {:?}\
                \n\t heap: {:?}\
-               \n\t call stack: {:?}\
                \n\t labels: {:?}\
                \n}}",
                self.stack,
                self.heap,
-               self.call_stack,
                self.labels)
     }
 }
@@ -54,65 +53,62 @@ impl Context {
         Context {
             stack: Vec::new(),
             heap: HashMap::new(),
-            call_stack: Vec::new(),
             labels: HashMap::new(),
 
-            fns: [Context::__push_stack as *const c::c_void,
-                  Context::__pop_stack as *const c::c_void,
-                  Context::__store as *const c::c_void,
-                  Context::__retrieve as *const c::c_void,
-                  Context::__store_label as *const c::c_void,
-                  Context::__retrieve_label as *const c::c_void,
-                  Context::__print as *const c::c_void,
-                  Context::__read as *const c::c_void],
+            fns: [Context::__push_stack as Address,
+                  Context::__pop_stack as Address,
+                  Context::__store as Address,
+                  Context::__retrieve as Address,
+                  Context::__store_label as Address,
+                  Context::__retrieve_label as Address,
+                  Context::__print as Address,
+                  Context::__read as Address],
         }
     }
-
-    // TODO the rest of these functions
 
     // Marked as unsafe to indicate that they're not meant to be called
     // from Rust, but from the jit-d code.
 
     /// Called from jit-ed code. Pushes a value onto the stack.
     #[no_mangle]
-    pub unsafe extern "C" fn __push_stack(&mut self, arg: Literal) {
+    pub unsafe extern "C" fn __push_stack(&mut self, arg: Number) {
         self.stack.push(arg);
     }
 
     /// Called from jit-ed code. Pops a value off the stack,
     /// returning that value.
     #[no_mangle]
-    pub unsafe extern "C" fn __pop_stack(&mut self) -> Literal {
+    pub unsafe extern "C" fn __pop_stack(&mut self) -> Number {
         self.stack.pop().unwrap()
     }
 
     /// Called from jit-ed code. Puts data in the heap.
     #[no_mangle]
-    pub unsafe extern "C" fn __store(&mut self, name: Literal, value: Literal) {
+    pub unsafe extern "C" fn __store(&mut self, name: Label, value: Number) {
         self.heap.insert(name, value);
     }
 
     /// Called from jit-ed code. Retrieves data from the heap.
     #[no_mangle]
-    pub unsafe extern "C" fn __retrieve(&self, name: Literal) -> Literal {
+    pub unsafe extern "C" fn __retrieve(&self, name: Label) -> Number {
         *self.heap.get(&name).unwrap()
     }
 
     /// Called from jit-ed code. Stores a label.
     #[no_mangle]
-    pub unsafe extern "C" fn __store_label(&mut self, name: Literal, ptr: *const c::c_void) {
+    pub unsafe extern "C" fn __store_label(&mut self, name: Label, ptr: Address) {
         self.labels.insert(name, ptr);
     }
 
     /// Called from jit-ed code. Retrieves a label.
     #[no_mangle]
-    pub unsafe extern "C" fn __retrieve_label(&self, name: Literal) -> *const c::c_void {
+    pub unsafe extern "C" fn __retrieve_label(&self, name: Label) -> Address {
         *self.labels.get(&name).unwrap()
     }
 
     /// Called from jit-ed code. Displays data to stdout.
     #[no_mangle]
-    pub unsafe extern "C" fn __print(data: Literal, is_char: bool) {
+    pub unsafe extern "C" fn __print(data: Number, is_char: bool) {
         if is_char {
             // TODO
             unimplemented!()
@@ -123,7 +119,7 @@ impl Context {
 
     /// Called from jit-ed code. Reads data from stdin.
     #[no_mangle]
-    pub unsafe extern "C" fn __read(is_char: bool) -> Literal {
+    pub unsafe extern "C" fn __read(is_char: bool) -> Number {
         if is_char {
             // TODO
             unimplemented!()

@@ -15,7 +15,7 @@ use command::Command;
 use jit::{JitFunction, JitMemory};
 use wsstd::Context;
 
-pub use wsstd::Literal;
+pub use wsstd::{Number, Label, Address};
 
 fn get_native_function(program: Vec<Command>) -> JitFunction {
     let machine_code = program.into_iter()

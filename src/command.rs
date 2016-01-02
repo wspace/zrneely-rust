@@ -1,5 +1,5 @@
 
-use Literal;
+use {Number, Label};
 
 #[derive(PartialEq, Eq, Clone, Debug)]
 pub enum IMP {
@@ -16,7 +16,7 @@ pub enum Command {
     Initialize,
 
     // Stack commands
-    Push(Literal),
+    Push(Number),
     Copy,
     Swap,
     Pop,
@@ -33,11 +33,11 @@ pub enum Command {
     Retrieve,
 
     // Flow control commands
-    Mark(Literal),
-    Call(Literal),
-    Jump(Literal),
-    JumpZero(Literal),
-    JumpNegative(Literal),
+    Mark(Label),
+    Call(Label),
+    Jump(Label),
+    JumpZero(Label),
+    JumpNegative(Label),
     Return,
     Exit,
 
