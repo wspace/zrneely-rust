@@ -7,8 +7,18 @@ use std::collections::HashMap;
 use std::fmt;
 
 pub type Number = i64;
-pub type Label = Vec<bool>;
 pub type Address = *const c::c_void;
+#[derive(Clone, Debug, Hash, Eq, PartialEq)]
+pub enum Label {
+    Name(Vec<bool>),
+    Translated(Address),
+}
+
+impl Label {
+    fn replace(self, mapping: &Context) -> Label {
+        unimplemented!()
+    }
+}
 
 /// The context of a running program.
 #[repr(C)]

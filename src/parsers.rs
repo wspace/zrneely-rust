@@ -37,9 +37,12 @@ named!(pub number<Number>, map!(
 );
 
 /// Identifies a label.
-named!(pub label<Label>, terminated!(
-    many1!(literal_char),
-    tag!("\n")
+named!(pub label<Label>, map!(
+    terminated!(
+        many1!(literal_char),
+        tag!("\n")
+    ),
+    |c: Vec<bool>| Label::Name(c)
 ));
 
 /// Identifies an IMP.
@@ -110,6 +113,7 @@ mod tests {
     use nom::IResult;
     use super::*;
     use command::*;
+    use Label;
 
     const NP: &'static str = "string not parsed";
 
@@ -206,11 +210,11 @@ mod tests {
 
     #[test]
     fn test_flow() {
-        nom_match!(flow, b"   \t\n", Command::Mark(vec![false, true]), NP);
-        nom_match!(flow, b" \t \t\n", Command::Call(vec![false, true]), NP);
-        nom_match!(flow, b" \n \t\n", Command::Jump(vec![false, true]), NP);
-        nom_match!(flow, b"\t  \t\n", Command::JumpZero(vec![false, true]), NP);
-        nom_match!(flow, b"\t\t \t\n", Command::JumpNegative(vec![false, true]), NP);
+        nom_match!(flow, b"   \t\n", Command::Mark(Label::Name(vec![false, true])), NP);
+        nom_match!(flow, b" \t \t\n", Command::Call(Label::Name(vec![false, true])), NP);
+        nom_match!(flow, b" \n \t\n", Command::Jump(Label::Name(vec![false, true])), NP);
+        nom_match!(flow, b"\t  \t\n", Command::JumpZero(Label::Name(vec![false, true])), NP);
+        nom_match!(flow, b"\t\t \t\n", Command::JumpNegative(Label::Name(vec![false, true])), NP);
         nom_match!(flow, b"\t\n", Command::Return, NP);
         nom_match!(flow, b"\n\n", Command::Exit, NP);
 
@@ -234,8 +238,8 @@ mod tests {
         nom_match!(command, b"\n\n\n", Command::Exit, NP);
         nom_match!(command, b"\t  \t", Command::Subtract, NP);
         nom_match!(command, b"   \t \t \n", Command::Push(10), NP);
-        nom_match!(command, b"\n   \t    \t\t\n", Command::Mark(vec![false, true, false, false, false, false, true, true]), NP);
-        nom_match!(command, b"\n\t  \t   \t \t\n", Command::JumpZero(vec![false, true, false, false, false, true, false, true]), NP);
+        nom_match!(command, b"\n   \t    \t\t\n", Command::Mark(Label::Name(vec![false, true, false, false, false, false, true, true])), NP);
+        nom_match!(command, b"\n\t  \t   \t \t\n", Command::JumpZero(Label::Name(vec![false, true, false, false, false, true, false, true])), NP);
 
         nom_no_match!(command,
                       b"\t\n \n",
@@ -247,7 +251,7 @@ mod tests {
         nom_match!(program,
                    b"   \t\n\n   \t    \t\t\n \n  \n\n\n\n\n",
                    vec![Command::Push(1),
-                        Command::Mark(vec![false, true, false, false, false, false, true, true]),
+                        Command::Mark(Label::Name(vec![false, true, false, false, false, false, true, true])),
                         Command::Copy,
                         Command::Pop,
                         Command::Exit],
