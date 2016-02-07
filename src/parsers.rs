@@ -5,8 +5,6 @@ use {Number, Label};
 // TODO properly handle "comments" aka non-legal characters, which should be
 // ignored per the spec.
 
-/// Identifies non-comment characters
-named!(pub legal_char, alt!(tag!(" ") | tag!("\t") | tag!("\n")));
 
 /// Identifies characters in a literal
 named!(pub literal_char<bool>, map!(

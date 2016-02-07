@@ -1,13 +1,11 @@
 
 extern crate libc;
 
-use libc as c;
-
 use std::collections::HashMap;
 use std::fmt;
 
 pub type Number = i64;
-pub type Address = *const c::c_void;
+pub type Address = usize;
 
 #[derive(Clone, Debug, Hash, Eq, PartialEq)]
 pub enum Label {
@@ -27,7 +25,6 @@ impl Label {
 }
 
 /// The context of a running program.
-#[repr(C)]
 pub struct Context {
     // "exported" function pointers usable by the jit-ed code
     // offset + 0x00: push to stack
@@ -38,7 +35,7 @@ pub struct Context {
     // offset + 0x28: get pointer to label
     // offset + 0x30: print data
     // offset + 0x38: read data
-    fns: [Address; 8],
+    pub fns: [Address; 8],
 
     stack: Vec<Number>,
     heap: HashMap<Label, Number>,
@@ -48,12 +45,12 @@ pub struct Context {
 
 impl fmt::Debug for Context {
     fn fmt(&self, formatter: &mut fmt::Formatter) -> Result<(), fmt::Error> {
-        try!(write!(formatter, "Context {{\n\t fns: ("));
+        try!(write!(formatter, "Context {{\n\t fns: ["));
         for ptr in self.fns.iter() {
-            try!(write!(formatter, "{:p}, ", ptr));
+            try!(write!(formatter, "0x{:x}, ", *ptr));
         }
         write!(formatter,
-               ")\n\t stack: {:?}\
+               "]\n\t stack: {:?}\
                \n\t heap: {:?}\
                \n\t labels: {:?}\
                \n}}",
@@ -86,44 +83,37 @@ impl Context {
     // from Rust, but from the jit-d code.
 
     /// Called from jit-ed code. Pushes a value onto the stack.
-    #[no_mangle]
     pub unsafe extern "C" fn __push_stack(&mut self, arg: Number) {
         self.stack.push(arg);
     }
 
     /// Called from jit-ed code. Pops a value off the stack,
     /// returning that value.
-    #[no_mangle]
     pub unsafe extern "C" fn __pop_stack(&mut self) -> Number {
         self.stack.pop().unwrap()
     }
 
     /// Called from jit-ed code. Puts data in the heap.
-    #[no_mangle]
     pub unsafe extern "C" fn __store(&mut self, name: Label, value: Number) {
         self.heap.insert(name, value);
     }
 
     /// Called from jit-ed code. Retrieves data from the heap.
-    #[no_mangle]
     pub unsafe extern "C" fn __retrieve(&self, name: Label) -> Number {
         *self.heap.get(&name).unwrap()
     }
 
     /// Called from jit-ed code. Stores a label.
-    #[no_mangle]
     pub unsafe extern "C" fn __store_label(&mut self, name: Label, ptr: Address) {
         self.labels.insert(name, ptr);
     }
 
     /// Called from jit-ed code. Retrieves a label.
-    #[no_mangle]
     pub unsafe extern "C" fn __retrieve_label(&self, name: Label) -> Address {
         *self.labels.get(&name).unwrap()
     }
 
     /// Called from jit-ed code. Displays data to stdout.
-    #[no_mangle]
     pub unsafe extern "C" fn __print(data: Number, is_char: bool) {
         if is_char {
             // TODO
@@ -134,7 +124,6 @@ impl Context {
     }
 
     /// Called from jit-ed code. Reads data from stdin.
-    #[no_mangle]
     pub unsafe extern "C" fn __read(is_char: bool) -> Number {
         if is_char {
             // TODO

@@ -1,5 +1,6 @@
 
 use {Number, Label};
+use wsstd::Context;
 
 #[derive(PartialEq, Eq, Clone, Debug)]
 pub enum IMP {
@@ -14,6 +15,7 @@ pub enum IMP {
 pub enum Command {
     // Meta commands
     Initialize,
+    Deinitialize,
 
     // Stack commands
     Push(Number),
@@ -48,48 +50,55 @@ pub enum Command {
     ReadNum,
 }
 
-//
-// address argument to call is offset in elf (from beginning of
-//  file) according to objdump. Is that just because the base
-//  address happens to be zero? No, that doesn't even make sense - the
-//  function pointer doesn't even end with that offset.
-// how to call there from executable memory on the heap?
-// does call take an offset, or can we know at compile time the address
-// a function will be at in memory thanks to virtualized memory spaces?
-// how to get that address in elf regardless? do we need it?
-//  or do we need the address of it at runtime, where it's loaded
-//  into memory?
-//
-// - open binary, read symbol table at runtime - blech, the hackiest
-// version of reflection
-//  - get info from linker at compile time - ideal, but how?
-//  - read symbol table after compilation with post-build script
-//      - store result in config file
-//      - modify created binary (would require a not-optimized-away
-//          constant)
-//  - put a bunch of function pointers in the Context struct. Might be
-//      the only way, especially if optimization strips the symbol
-//      table
-//
-// still need to figure out calling conventions for x64. Used extern
-// in wsstd, so we can use C ABI instead of Rust's non-standard one.
-//
+// little-endian expansion
+fn le_expand(n: u64) -> Vec<u8> {
+    println!("n: 0x{:x}", n);
+    vec![
+        ((n >> 0x00) as u8),
+        ((n >> 0x08) as u8),
+        ((n >> 0x10) as u8),
+        ((n >> 0x18) as u8),
+        ((n >> 0x20) as u8),
+        ((n >> 0x28) as u8),
+        ((n >> 0x30) as u8),
+        ((n >> 0x38) as u8),
+    ]
+}
 
 impl Command {
     /// Converts this command into assembly.
-    /// TODO might have to make a separate "linking" step if
-    /// we need to be able to jump to addresses that are marked later
-    /// in the file
-    pub fn assemble(self) -> Vec<u8> {
+    /// TODO handle "linking"
+    pub fn assemble(self, context: &Context) -> Vec<u8> {
         match self {
             Command::Initialize => vec![
                 // TODO what needs to happen?
-                unimplemented!(),
+                // unimplemented!(),
+            ],
+            Command::Deinitialize => vec![
+                // ret
+                0xC3
             ],
             Command::Push(n) => vec![
-                // __push_stack(n)
-                unimplemented!(),
-            ],
+                    // push rbx     ; we need to save it
+                vec![0x53,
+                    //              ; start pushing function arguments
+                    // movabs rax, &context
+                     0x48, 0xB8], le_expand(context as *const _ as u64),
+                    // push rax
+                vec![0x50,
+                    // movabs rax, n
+                     0x48, 0xB8], le_expand(n as u64),
+                    // push rax
+                vec![0x50,
+                    // mov rbx, context.fns[0]
+                     0x48, 0xBB], le_expand(context.fns[0] as u64),
+                    // call rbx
+                vec![0xFF, 0xD3,
+                    // pop rax
+                     0x58,
+                    // pop rbx
+                     0x5B],
+            ].concat(),
             Command::Copy => vec![
                 // rax = __pop_stack()
                 unimplemented!(),

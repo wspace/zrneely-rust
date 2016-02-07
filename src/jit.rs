@@ -3,8 +3,6 @@ use libc as c;
 use std::mem::{forget, transmute, uninitialized};
 use std::ops::{Index, IndexMut};
 
-use wsstd::Context;
-
 extern {
     fn memset(s: *mut c::c_void, c: c::uint32_t, n: c::size_t) -> *mut c::c_void;
 }
@@ -15,7 +13,7 @@ pub struct JitMemory {
 }
 
 pub struct JitFunction {
-    contents: fn(*mut Context) -> i64,
+    contents: fn() -> i64,
     size: usize,
 }
 
@@ -32,9 +30,8 @@ impl JitMemory {
             let size = num_pages * page_size;
 
             // Let's allocate space for the JIT function.
-            let mut page: *mut c::c_void = uninitialized();
-
             // It has to be aligned...
+            let mut page: *mut c::c_void = uninitialized();
             c::posix_memalign(&mut page, page_size, size);
 
             // ...and marked as writable.
@@ -76,8 +73,8 @@ impl Drop for JitFunction {
 }
 
 impl JitFunction {
-    pub fn execute(&self, mut context: Context) -> i64 {
-        (self.contents)(&mut context as *mut Context)
+    pub fn execute(&self) -> i64 {
+        (self.contents)()
     }
 }
 
