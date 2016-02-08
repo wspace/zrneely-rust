@@ -100,7 +100,7 @@ impl Context {
     }
 
     /// Called from jit-ed code. Reads data from stdin.
-    pub unsafe extern "C" fn __read(is_char: bool) -> Number {
+    pub unsafe extern fn read(is_char: bool) -> Number {
         if is_char {
             // TODO
             unimplemented!()

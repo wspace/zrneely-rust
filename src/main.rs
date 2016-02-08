@@ -46,7 +46,6 @@ fn parse(program: &[u8]) -> Option<Vec<Command>> {
 fn main() {
 
     let input_file = unimplemented!();
-    // let input = b"    \t\n \n ";
     let input = unimplemented!();
 
     let program = parse(input).expect("Invalid program!");
@@ -92,5 +91,19 @@ mod test {
         }
 
         assert_eq!(context.stack, [1, 1]);
+    }
+
+    #[test]
+    fn test_pop() {
+        let input = b"    \t\n \n\n";
+        let program = parse(input).expect("Parsing failed!");
+        let mut context = Context::new();
+        {
+            let program = get_native_function(program, &mut context);
+
+            program.execute();
+        }
+
+        assert_eq!(context.stack, []);
     }
 }

@@ -145,9 +145,13 @@ impl Command {
                 unimplemented!(),
             ],
             Command::Pop => vec![
-                // __pop_stack()
-                unimplemented!(),
-            ],
+                // mov rdi, &context
+                mov_le(RDI, refint!(context)),
+                // mov rcx, pop_stack
+                mov_le(RCX, Context::pop_stack as u64),
+                // call rcx     ; result is in rax
+                vec![0xff, 0xd1],
+            ].concat(),
             _ => unimplemented!(),
         }
     }
