@@ -17,7 +17,7 @@ use wsstd::Context;
 
 pub use wsstd::{Number, Label};
 
-fn get_native_function(program: Vec<Command>, context: &Context) -> JitFunction {
+fn get_native_function<'a>(program: Vec<Command>, context: &'a mut Context) -> JitFunction<'a> {
     let machine_code = program.into_iter()
                               .map(|x| x.assemble(context))
                               .collect::<Vec<Vec<u8>>>()
@@ -32,31 +32,30 @@ fn get_native_function(program: Vec<Command>, context: &Context) -> JitFunction 
     memory.into()
 }
 
-fn main() {
-    // let input_file = unimplemented!();
-    // This is:
-    //      push 1
-    //      copy top of stack
-    let input = b"    \t\n \n ";
-    // let input = unimplemented!();
-
-    // println!("Parsing input...");
-    let program = match parsers::program(input) {
+fn parse(program: &[u8]) -> Option<Vec<Command>> {
+    match parsers::program(program) {
         IResult::Done(_, mut program) => {
             program.insert(0, Command::Initialize);
             program.push(Command::Deinitialize);
-            program
+            Some(program)
         }
-        // TODO better error handling
-        _ => panic!("Invalid program!"),
-    };
+        _ => None
+    }
+}
 
-    let context = Context::new();
-    println!("{:?}", context);
-    println!("Compiling...");
-    let program = get_native_function(program, &context);
+fn main() {
 
-    println!("Running:");
-    program.execute();
+    let input_file = unimplemented!();
+    // let input = b"    \t\n \n ";
+    let input = unimplemented!();
+
+    let program = parse(input).expect("Invalid program!");
+
+    let mut context = Context::new();
+    {
+        let program = get_native_function(program, &mut context);
+
+        program.execute();
+    }
     println!("Done!\n{:?}", context);
 }

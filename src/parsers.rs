@@ -139,15 +139,6 @@ mod tests {
     }
 
     #[test]
-    fn test_legal_char() {
-        nom_match!(legal_char, b" ", "space not recognized");
-        nom_match!(legal_char, b"\t", "tab not recognized");
-        nom_match!(legal_char, b"\n", "newline not recognized");
-
-        nom_no_match!(legal_char, b"a", "a mistakenly recognized");
-    }
-
-    #[test]
     fn test_literal_char() {
         nom_match!(literal_char, b"\t", true, "tab not recognized");
         nom_match!(literal_char, b" ", false, "space not recognized");

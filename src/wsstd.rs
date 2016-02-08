@@ -26,10 +26,10 @@ impl Label {
 
 /// The context of a running program.
 pub struct Context {
-    stack: Vec<Number>,
-    heap: HashMap<Label, Number>,
+    pub stack: Vec<Number>,
+    pub heap: HashMap<Label, Number>,
     // maps literals to jump-to-able addresses in the function
-    labels: HashMap<Label, Address>,
+    pub labels: HashMap<Label, Address>,
 }
 
 impl fmt::Debug for Context {
@@ -109,5 +109,4 @@ impl Context {
             unimplemented!()
         }
     }
-
 }

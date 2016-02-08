@@ -2,22 +2,27 @@
 use libc as c;
 use std::mem::{forget, transmute, uninitialized};
 use std::ops::{Index, IndexMut};
+use std::marker::PhantomData;
+
+use wsstd::Context;
 
 extern {
     fn memset(s: *mut c::c_void, c: c::uint32_t, n: c::size_t) -> *mut c::c_void;
 }
 
-pub struct JitMemory {
+pub struct JitMemory<'a> {
     contents: *mut u8,
     size: usize,
+    phantom: PhantomData<&'a mut Context>,
 }
 
-pub struct JitFunction {
+pub struct JitFunction<'a> {
     contents: fn() -> i64,
     size: usize,
+    phantom: PhantomData<&'a mut Context>,
 }
 
-impl JitMemory {
+impl<'a> JitMemory<'a> {
 
     pub fn get_page_size() -> usize {
         unsafe { c::sysconf(c::_SC_PAGESIZE) as usize }
@@ -44,6 +49,7 @@ impl JitMemory {
             JitMemory {
                 contents: transmute(page),
                 size: size,
+                phantom: PhantomData,
             }
         }
     }
@@ -56,7 +62,7 @@ impl JitMemory {
     }
 }
 
-impl Drop for JitMemory {
+impl<'a> Drop for JitMemory<'a> {
     fn drop(&mut self) {
         unsafe {
             c::free(transmute(self.contents));
@@ -64,7 +70,7 @@ impl Drop for JitMemory {
     }
 }
 
-impl Drop for JitFunction {
+impl<'a> Drop for JitFunction<'a> {
     fn drop(&mut self) {
         unsafe {
             c::free(transmute(self.contents));
@@ -72,14 +78,14 @@ impl Drop for JitFunction {
     }
 }
 
-impl JitFunction {
-    pub fn execute(&self) -> i64 {
+impl<'a> JitFunction<'a> {
+    pub fn execute(self) -> i64 {
         (self.contents)()
     }
 }
 
-impl Into<JitFunction> for JitMemory {
-    fn into(self) -> JitFunction {
+impl<'a> Into<JitFunction<'a>> for JitMemory<'a> {
+    fn into(self) -> JitFunction<'a> {
         // Mark the function as executable, but not writable.
         unsafe {
             c::mprotect(transmute(self.contents),
@@ -88,6 +94,7 @@ impl Into<JitFunction> for JitMemory {
             let function = JitFunction {
                 contents: transmute(self.contents),
                 size: self.size,
+                phantom: PhantomData,
             };
             // Don't call the destructor
             forget(self);
@@ -96,8 +103,8 @@ impl Into<JitFunction> for JitMemory {
     }
 }
 
-impl Into<JitMemory> for JitFunction {
-    fn into(self) -> JitMemory {
+impl<'a> Into<JitMemory<'a>> for JitFunction<'a> {
+    fn into(self) -> JitMemory<'a> {
         // Mark the function as writable, but not executable.
         unsafe {
             c::mprotect(transmute(self.contents),
@@ -106,6 +113,7 @@ impl Into<JitMemory> for JitFunction {
             let memory = JitMemory {
                 contents: transmute(self.contents),
                 size: self.size,
+                phantom: PhantomData,
             };
             // Don't call the destructor
             forget(self);
@@ -114,7 +122,7 @@ impl Into<JitMemory> for JitFunction {
     }
 }
 
-impl Index<usize> for JitMemory {
+impl<'a> Index<usize> for JitMemory<'a> {
     type Output = u8;
 
     fn index(&self, _index: usize) -> &u8 {
@@ -125,7 +133,7 @@ impl Index<usize> for JitMemory {
     }
 }
 
-impl IndexMut<usize> for JitMemory {
+impl<'a> IndexMut<usize> for JitMemory<'a> {
     fn index_mut(&mut self, _index: usize) -> &mut u8 {
         if _index > self.size {
             panic!("index {} out of bounds for JitMemory", _index);
@@ -145,7 +153,7 @@ mod tests {
         memory.copy_from(program);
 
         let function: JitFunction = memory.into();
-        assert_eq!(output, function.execute(Context::new()));
+        assert_eq!(output, function.execute());
     }
 
     #[test]
