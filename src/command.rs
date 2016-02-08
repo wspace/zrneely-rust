@@ -81,10 +81,19 @@ impl Command {
     /// TODO handle "linking"
     pub fn assemble(self, context: &Context) -> Vec<u8> {
         match self {
-            Command::Initialize => vec![],
+            Command::Initialize => vec![
+                // push rbp
+                0x55,
+                // mov rbp, rsp
+                0x48, 0x89, 0xe5,
+            ],
             Command::Deinitialize => vec![
+                // mov rsp, rbp
+                0x48, 0x89, 0xec,
+                // pop rbp
+                0x5d,
                 // ret
-                0xC3
+                0xc3
             ],
             Command::Push(n) => vec![
                 // mov rdi, &context
@@ -97,13 +106,31 @@ impl Command {
                 vec![0xff, 0xd0],
             ].concat(),
             Command::Copy => vec![
-                // rax = __pop_stack()
-                unimplemented!(),
-                // __push_stack(rax)
-                unimplemented!(),
-                // __push_stack(rax)
-                unimplemented!(),
-            ],
+                // mov rdi, &context
+                mov_le(RDI, refint!(context)),
+                // mov rcx, pop_stack
+                mov_le(RCX, Context::pop_stack as u64),
+                // call rcx     ; result is in rax
+                vec![0xff, 0xd1],
+
+                // mov rdi, &context
+                mov_le(RDI, refint!(context)),
+                // mov rsi, rax
+                vec![0x48, 0x89, 0xc6],
+                // mov rcx, push_stack
+                mov_le(RCX, Context::push_stack as u64),
+                // call rcx     ; result is in rax
+                vec![0xff, 0xd1],
+
+                // mov rdi, &context
+                mov_le(RDI, refint!(context)),
+                // mov rsi, rax
+                vec![0x48, 0x89, 0xc6],
+                // mov rc, push_stack
+                mov_le(RCX, Context::push_stack as u64),
+                // call rcx     ; result is in rax
+                vec![0xff, 0xd1],
+            ].concat(),
             Command::Swap => vec![
                 // rax = __pop_stack()
                 unimplemented!(),

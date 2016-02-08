@@ -34,7 +34,10 @@ fn get_native_function(program: Vec<Command>, context: &Context) -> JitFunction 
 
 fn main() {
     // let input_file = unimplemented!();
-    let input = b"    \t\n";
+    // This is:
+    //      push 1
+    //      copy top of stack
+    let input = b"    \t\n \n ";
     // let input = unimplemented!();
 
     // println!("Parsing input...");

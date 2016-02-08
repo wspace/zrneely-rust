@@ -55,15 +55,16 @@ impl Context {
     // Marked as unsafe to indicate that they're not meant to be called
     // from Rust, but from the jit-d code.
 
-    /// Called from jit-ed code. Pushes a value onto the stack, then returns that same
-    /// value.
+    /// Called from jit-ed code. Pushes a value onto the stack, then
+    /// returns that same value.
     pub unsafe extern fn push_stack(&mut self, arg: Number) -> Number {
         self.stack.push(arg);
         arg
     }
 
-    /// Called from jit-ed code. Pops a value off the stack,
-    /// returning that value.
+    /// Called from jit-ed code. Pops a value off the stack, returning that value.
+    /// If the stack is empty, returns 0. The situation where the stack is empty
+    /// isn't defined in the spec, but it's hard to deal with panics across FFI boundaries.
     pub unsafe extern fn pop_stack(&mut self) -> Number {
         self.stack.pop().unwrap_or(0)
     }
