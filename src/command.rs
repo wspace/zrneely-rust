@@ -50,10 +50,17 @@ pub enum Command {
     ReadNum,
 }
 
-// little-endian expansion
-fn le_expand(n: u64) -> Vec<u8> {
-    println!("n: 0x{:x}", n);
+const RAX: u8 = 0xb8;
+const RBX: u8 = 0xbb;
+const RCX: u8 = 0xb9;
+const RDX: u8 = 0xba;
+const RDI: u8 = 0xbf;
+const RSI: u8 = 0xbe;
+/// little-endian move
+fn mov_le(reg: u8, n: u64) -> Vec<u8> {
     vec![
+        0x48,
+        reg,
         ((n >> 0x00) as u8),
         ((n >> 0x08) as u8),
         ((n >> 0x10) as u8),
@@ -65,39 +72,29 @@ fn le_expand(n: u64) -> Vec<u8> {
     ]
 }
 
+macro_rules! refint {
+    ($x:expr) => ($x as *const _ as u64)
+}
+
 impl Command {
     /// Converts this command into assembly.
     /// TODO handle "linking"
     pub fn assemble(self, context: &Context) -> Vec<u8> {
         match self {
-            Command::Initialize => vec![
-                // TODO what needs to happen?
-                // unimplemented!(),
-            ],
+            Command::Initialize => vec![],
             Command::Deinitialize => vec![
                 // ret
                 0xC3
             ],
             Command::Push(n) => vec![
-                    // push rbx     ; we need to save it
-                vec![0x53,
-                    //              ; start pushing function arguments
-                    // movabs rax, &context
-                     0x48, 0xB8], le_expand(context as *const _ as u64),
-                    // push rax
-                vec![0x50,
-                    // movabs rax, n
-                     0x48, 0xB8], le_expand(n as u64),
-                    // push rax
-                vec![0x50,
-                    // mov rbx, context.fns[0]
-                     0x48, 0xBB], le_expand(context.fns[0] as u64),
-                    // call rbx
-                vec![0xFF, 0xD3,
-                    // pop rax
-                     0x58,
-                    // pop rbx
-                     0x5B],
+                // mov rdi, &context
+                mov_le(RDI, refint!(context)),
+                // mov rsi, n
+                mov_le(RSI, n as u64),
+                // mov rax, push_stack
+                mov_le(RAX, Context::push_stack as u64),
+                // call rax
+                vec![0xff, 0xd0],
             ].concat(),
             Command::Copy => vec![
                 // rax = __pop_stack()
