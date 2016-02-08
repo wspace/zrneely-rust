@@ -59,3 +59,38 @@ fn main() {
     }
     println!("Done!\n{:?}", context);
 }
+
+#[cfg(test)]
+mod test {
+    use parsers::program;
+    use wsstd::Context;
+    use super::{parse, get_native_function};
+
+    #[test]
+    fn test_push() {
+        let input = b"    \t\n";
+        let program = parse(input).expect("Parsing failed!");
+        let mut context = Context::new();
+        {
+            let program = get_native_function(program, &mut context);
+
+            program.execute();
+        }
+
+        assert_eq!(context.stack, [1]);
+    }
+
+    #[test]
+    fn test_copy() {
+        let input = b"    \t\n \n ";
+        let program = parse(input).expect("Parsing failed!");
+        let mut context = Context::new();
+        {
+            let program = get_native_function(program, &mut context);
+
+            program.execute();
+        }
+
+        assert_eq!(context.stack, [1, 1]);
+    }
+}
