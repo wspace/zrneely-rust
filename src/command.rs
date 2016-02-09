@@ -86,8 +86,18 @@ impl Command {
                 0x55,
                 // mov rbp, rsp
                 0x48, 0x89, 0xe5,
+
+                // we can use a few registers, but we have to restore them after
+                // push rbx
+                0x53,
+                // push r12
+                0x41, 0x54,
             ],
             Command::Deinitialize => vec![
+                // pop r12
+                0x41, 0x5c,
+                // pop rbx
+                0x5b,
                 // mov rsp, rbp
                 0x48, 0x89, 0xec,
                 // pop rbp
@@ -132,18 +142,42 @@ impl Command {
                 vec![0xff, 0xd1],
             ].concat(),
             Command::Swap => vec![
-                // rax = __pop_stack()
-                unimplemented!(),
-                // mov rdx, rax ; TODO do I need to push/pop rdx? Should I use a different
-                // register? Should I know more assembly before doing this? Yes hahaha :(
-                0x48, 0x89, 0xC2,
-                // rax = __pop_stack()
-                unimplemented!(),
-                // __push_stack(rax)
-                unimplemented!(),
-                // __push_stack(rdx)
-                unimplemented!(),
-            ],
+                // mov rdi, &context
+                mov_le(RDI, refint!(context)),
+                // mov rcx, pop_stack
+                mov_le(RCX, Context::pop_stack as u64),
+                // call rcx     ; result is in rax
+                vec![0xff, 0xd1],
+                // mov rbx, rax ; store returned value elsewhere
+                vec![0x48, 0x89, 0xc3],
+
+                // mov rdi, &context
+                mov_le(RDI, refint!(context)),
+                // mov rcx, pop_stack
+                mov_le(RCX, Context::pop_stack as u64),
+                // call rcx     ; result is in rax
+                vec![0xff, 0xd1],
+                // mov r12, rax ; store returned value elsewhere
+                vec![0x48, 0x89, 0xc4],
+
+                // mov rdi, &context
+                mov_le(RDI, refint!(context)),
+                // mov rsi, rbx
+                vec![0x48, 0x89, 0xde],
+                // mov rcx, push_stack
+                mov_le(RCX, Context::push_stack as u64),
+                // call rcx
+                vec![0xff, 0xd1],
+
+                // mov rdi, &context
+                mov_le(RDI, refint!(context)),
+                // mov rsi, rax
+                vec![0x48, 0x89, 0xe6],
+                // mov rcx, push_stack
+                mov_le(RCX, Context::push_stack as u64),
+                // call rcx
+                vec![0xff, 0xd1],
+            ].concat(),
             Command::Pop => vec![
                 // mov rdi, &context
                 mov_le(RDI, refint!(context)),

@@ -60,50 +60,40 @@ fn main() {
 }
 
 #[cfg(test)]
-mod test {
+mod runtest {
+    use std::collections::HashMap;
+
     use parsers::program;
-    use wsstd::Context;
+    use wsstd::{Context, Label, Number};
     use super::{parse, get_native_function};
 
-    #[test]
-    fn test_push() {
-        let input = b"    \t\n";
-        let program = parse(input).expect("Parsing failed!");
-        let mut context = Context::new();
-        {
-            let program = get_native_function(program, &mut context);
-
-            program.execute();
+    macro_rules! gen_tests {
+        ( $($name:ident: $program:expr => ($stack: expr, $heap: expr);)* ) => {
+            $(
+                #[test]
+                fn $name() {
+                    let input = $program;
+                    let program = parse(input).expect("Parsing failed!");
+                    let mut context = Context::new();
+                    {
+                        let program = get_native_function(program, &mut context);
+                        program.execute();
+                    }
+                    if let Some(stack) = $stack {
+                        assert_eq!(context.stack, stack);
+                    }
+                    if let Some(heap) = $heap {
+                        assert_eq!(context.heap, heap);
+                    }
+                }
+            )*
         }
-
-        assert_eq!(context.stack, [1]);
     }
 
-    #[test]
-    fn test_copy() {
-        let input = b"    \t\n \n ";
-        let program = parse(input).expect("Parsing failed!");
-        let mut context = Context::new();
-        {
-            let program = get_native_function(program, &mut context);
-
-            program.execute();
-        }
-
-        assert_eq!(context.stack, [1, 1]);
-    }
-
-    #[test]
-    fn test_pop() {
-        let input = b"    \t\n \n\n";
-        let program = parse(input).expect("Parsing failed!");
-        let mut context = Context::new();
-        {
-            let program = get_native_function(program, &mut context);
-
-            program.execute();
-        }
-
-        assert_eq!(context.stack, []);
+    gen_tests! {
+        push: b"    \t\n"                       => (Some(&[1]),         None);
+        copy: b"    \t\n \n "                   => (Some(&[1, 1]),      None);
+        pop:  b"    \t\n \n\n"                  => (Some(&[]),          None);
+        swap: b"    \t\n    \n \n\t"            => (Some(&[1, 0]),      None);
     }
 }
