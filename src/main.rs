@@ -72,14 +72,16 @@ mod runtest {
             $(
                 #[test]
                 fn $name() {
-                    let input = $program;
-                    let program = parse(input).expect("Parsing failed!");
+                    let program = parse($program).expect("Parsing failed!");
                     let mut context = Context::new();
                     {
                         let program = get_native_function(program, &mut context);
                         program.execute();
                     }
                     if let Some(stack) = $stack {
+                        // we reverse the stack here so that the top of the stack
+                        // is at the left in test cases, which is easier to read
+                        context.stack.reverse();
                         assert_eq!(context.stack, stack);
                     }
                     if let Some(heap) = $heap {
@@ -91,9 +93,15 @@ mod runtest {
     }
 
     gen_tests! {
+        // push 1
         push: b"    \t\n"                       => (Some(&[1]),         None);
-        copy: b"    \t\n \n "                   => (Some(&[1, 1]),      None);
+        // push 1, duplicate
+        duplicate: b"    \t\n \n "              => (Some(&[1, 1]),      None);
+        // push 1, pop
         pop:  b"    \t\n \n\n"                  => (Some(&[]),          None);
+        // push 1, push 0, swap
         swap: b"    \t\n    \n \n\t"            => (Some(&[1, 0]),      None);
+        // push 0, push 1, copy 1
+        copy: b"   \n    \t\n \t   \t\n"        => (Some(&[0, 1, 0]),   None);
     }
 }

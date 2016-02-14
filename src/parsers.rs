@@ -23,14 +23,13 @@ named!(pub number<Number>, map!(
         |mut c: Vec<bool>| {
             // Reverse the non-sign bits
             c[1..].reverse();
-            let sign = if c[0] { -1 } else { 1 };
             let mut mantissa = 1;
             let mut value = 0;
             for bit in &c[1..] {
                 value += if *bit { mantissa } else { 0 };
                 mantissa *= 2;
             }
-            value * sign
+            value * if c[0] { -1 } else { 1 }
         })
 );
 
@@ -55,7 +54,8 @@ named!(pub imp<IMP>, alt!(
 /// Identifies a stack instruction.
 named!(pub stack<Command>, alt!(
     map!(preceded!(tag!(" "), number), |n| Command::Push(n)) |
-    map!(tag!("\n "), |_| Command::Copy) |
+    map!(tag!("\n "), |_| Command::Duplicate) |
+    map!(preceded!(tag!("\t "), number), |n| Command::Copy(n)) |
     map!(tag!("\n\t"), |_| Command::Swap) |
     map!(tag!("\n\n"), |_| Command::Pop)
 ));
@@ -169,7 +169,7 @@ mod tests {
     #[test]
     fn test_stack() {
         nom_match!(stack, b"  \t \t \t \n", Command::Push(42), NP);
-        nom_match!(stack, b"\n ", Command::Copy, NP);
+        nom_match!(stack, b"\n ", Command::Duplicate, NP);
         nom_match!(stack, b"\n\t", Command::Swap, NP);
         nom_match!(stack, b"\n\n", Command::Pop, NP);
 
@@ -241,7 +241,7 @@ mod tests {
                    b"   \t\n\n   \t    \t\t\n \n  \n\n\n\n\n",
                    vec![Command::Push(1),
                         Command::Mark(Label::Name(vec![false, true, false, false, false, false, true, true])),
-                        Command::Copy,
+                        Command::Duplicate,
                         Command::Pop,
                         Command::Exit],
                    NP);

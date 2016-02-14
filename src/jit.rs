@@ -44,7 +44,7 @@ impl<'a> JitMemory<'a> {
 
             // Fill it with "int" (0xCC) to avoid using uninitialized memory. This will
             // cause a SIGTRAP immediately on execution.
-            memset(page, 0xCC, size);
+            memset(page, 0xcc, size);
 
             JitMemory {
                 contents: transmute(page),
@@ -158,7 +158,7 @@ mod tests {
 
     #[test]
     #[cfg_attr(rustfmt, rustfmt_skip)]
-    fn test_jit() {
+    fn jit() {
         check_output(&[0x48, 0xC7, 0xC0, 0x20, 0x00, 0x00, 0x00,    // mov rax, 0x20
                        0x48, 0x83, 0xC0, 0x0A,                      // add rax, 0x0A
                        0x48, 0x83, 0xE8, 0x0A,                      // sub rax, 0x0A

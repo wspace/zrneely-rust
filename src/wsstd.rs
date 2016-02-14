@@ -66,7 +66,16 @@ impl Context {
     /// If the stack is empty, returns 0. The situation where the stack is empty
     /// isn't defined in the spec, but it's hard to deal with panics across FFI boundaries.
     pub unsafe extern fn pop_stack(&mut self) -> Number {
-        self.stack.pop().unwrap_or(0)
+        self.stack.pop().unwrap_or({ println!("WS pop stack error!"); 0 })
+    }
+
+    /// Called from jit-ed code. Reads a value from the n'th place in the stack, and
+    /// returns it.
+    pub unsafe extern fn peek_stack(&self, arg: Number) -> Number {
+        *self.stack.get(self.stack.len() - arg as usize - 1).unwrap_or({
+            println!("WS peek stack error!");
+            &0
+        })
     }
 
     /// Called from jit-ed code. Puts data in the heap.

@@ -19,7 +19,8 @@ pub enum Command {
 
     // Stack commands
     Push(Number),
-    Copy,
+    Duplicate,
+    Copy(Number),
     Swap,
     Pop,
 
@@ -115,11 +116,13 @@ impl Command {
                 // call rax
                 vec![0xff, 0xd0],
             ].concat(),
-            Command::Copy => vec![
+            Command::Duplicate => vec![
                 // mov rdi, &context
                 mov_le(RDI, refint!(context)),
-                // mov rcx, pop_stack
-                mov_le(RCX, Context::pop_stack as u64),
+                // mov rsi, 0
+                mov_le(RSI, 0),
+                // mov rcx, peek_stack
+                mov_le(RCX, Context::peek_stack as u64),
                 // call rcx     ; result is in rax
                 vec![0xff, 0xd1],
 
@@ -128,15 +131,6 @@ impl Command {
                 // mov rsi, rax
                 vec![0x48, 0x89, 0xc6],
                 // mov rcx, push_stack
-                mov_le(RCX, Context::push_stack as u64),
-                // call rcx     ; result is in rax
-                vec![0xff, 0xd1],
-
-                // mov rdi, &context
-                mov_le(RDI, refint!(context)),
-                // mov rsi, rax
-                vec![0x48, 0x89, 0xc6],
-                // mov rc, push_stack
                 mov_le(RCX, Context::push_stack as u64),
                 // call rcx     ; result is in rax
                 vec![0xff, 0xd1],
@@ -158,7 +152,7 @@ impl Command {
                 // call rcx     ; result is in rax
                 vec![0xff, 0xd1],
                 // mov r12, rax ; store returned value elsewhere
-                vec![0x48, 0x89, 0xc4],
+                vec![0x49, 0x89, 0xc4],
 
                 // mov rdi, &context
                 mov_le(RDI, refint!(context)),
@@ -171,8 +165,8 @@ impl Command {
 
                 // mov rdi, &context
                 mov_le(RDI, refint!(context)),
-                // mov rsi, rax
-                vec![0x48, 0x89, 0xe6],
+                // mov rsi, r12
+                vec![0x4c, 0x89, 0xe6],
                 // mov rcx, push_stack
                 mov_le(RCX, Context::push_stack as u64),
                 // call rcx
@@ -184,6 +178,25 @@ impl Command {
                 // mov rcx, pop_stack
                 mov_le(RCX, Context::pop_stack as u64),
                 // call rcx     ; result is in rax
+                vec![0xff, 0xd1],
+            ].concat(),
+            Command::Copy(n) => vec![
+                // mov rdi, &context
+                mov_le(RDI, refint!(context)),
+                // mov rsi, n
+                mov_le(RSI, n as u64),
+                // mov rcx, peek_stack
+                mov_le(RCX, Context::peek_stack as u64),
+                // call rcx     ; result is in rax
+                vec![0xff, 0xd1],
+
+                // mov rdi, &context
+                mov_le(RDI, refint!(context)),
+                // mov rsi, rax
+                vec![0x48, 0x89, 0xc6],
+                // mov rcx, push_stack
+                mov_le(RCX, Context::push_stack as u64),
+                // call rcx
                 vec![0xff, 0xd1],
             ].concat(),
             _ => unimplemented!(),
