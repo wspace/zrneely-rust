@@ -108,6 +108,20 @@ macro_rules! fn_call {
     };
 }
 
+macro_rules! arith {
+    ($c:expr, $x:expr) => {
+        vec![
+            fn_call!(pop_stack: $c),
+            // mov r12, rax
+            vec![0x49, 0x89, 0xc4],
+            fn_call!(pop_stack: $c),
+            $x,
+            fn_call!(push_stack: $c, RSI_setter: vec![0x48, 0x89, 0xc6]),
+                                                     // mov rsi, rax
+        ].concat()
+    }
+}
+
 impl Command {
     /// Converts this command into assembly.
     /// TODO handle "linking"
@@ -153,41 +167,33 @@ impl Command {
                 vec![0x49, 0x89, 0xc4],
 
                 fn_call!(push_stack: c, RSI_setter: vec![0x48, 0x89, 0xde]),
-                                                          // mov rsi, rbx
+                                                         // mov rsi, rbx
 
                 fn_call!(push_stack: c, RSI_setter: vec![0x4c, 0x89, 0xe6]),
-                                                          // mov rsi, r12
+                                                         // mov rsi, r12
             ].concat(),
             Command::Pop => fn_call!(pop_stack: c),
             Command::Copy(n) => vec![
                 fn_call!(peek_stack: c, RSI: n as u64),
                 fn_call!(push_stack: c, RSI_setter: vec![0x48, 0x89, 0xc6]),
-                                                          // mov rsi, rax
+                                                         // mov rsi, rax
             ].concat(),
-            Command::Add => vec![
-                fn_call!(pop_stack: c),
-                // mov r12, rax
-                vec![0x49, 0x89, 0xc4],
-
-                fn_call!(pop_stack: c),
-
-                // add rax, r12
-                vec![0x4c, 0x01, 0xe0],
-
-                fn_call!(push_stack: c, RSI_setter: vec![0x48, 0x89, 0xc6]),
-            ].concat(),
-            Command::Subtract => vec![
-                fn_call!(pop_stack: c),
-                // mov r12, rax
-                vec![0x49, 0x89, 0xc4],
-
-                fn_call!(pop_stack: c),
-
-                // sub rax, r12
-                vec![0x4c, 0x29, 0xe0],
-
-                fn_call!(push_stack: c, RSI_setter: vec![0x48, 0x89, 0xc6]),
-            ].concat(),
+            Command::Add => arith!(c, vec![0x4c, 0x01, 0xe0]),
+                                           // add rax, r12
+            Command::Subtract => arith!(c, vec![0x4c, 0x29, 0xe0]),
+                                                // sub rax, r12
+            Command::Multiply => arith!(c, vec![0x49, 0xf7, 0xe4]),
+                                                // mul r12
+            Command::Divide => arith!(c, vec![0x48, 0x99,
+                                              // cqo    ; sign extend rax into rdx:rax
+                                              0x49, 0xf7, 0xfc]),
+                                              // idiv r12
+            Command::Modulus => arith!(c, vec![0x48, 0x99,
+                                               // cqo
+                                               0x49, 0xf7, 0xfc,
+                                               // idiv r12
+                                               0x48, 0x89, 0xd0]),
+                                               // mov rax, rdx
             _ => unimplemented!(),
         }
     }

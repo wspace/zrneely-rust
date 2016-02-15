@@ -60,7 +60,7 @@ fn main() {
 }
 
 #[cfg(test)]
-mod runtest {
+mod tests {
     macro_rules! gen_tests {
         ( $($pkg:ident: {
             $($name:ident: $program:expr => ($stack: expr, $heap: expr);)*
@@ -98,26 +98,44 @@ mod runtest {
     gen_tests! {
         stack: {
             // push 1
-            push:       b"    \t\n"                       => (Some([1]),         None);
+            push:       b"    \t\n"                         => (Some([1]),        None);
             // push 1, duplicate
-            duplicate:  b"    \t\n \n "                   => (Some([1, 1]),      None);
+            duplicate:  b"    \t\n \n "                     => (Some([1, 1]),     None);
             // push 1, pop
-            pop:        b"    \t\n \n\n"                  => (Some([]),          None);
+            pop:        b"    \t\n \n\n"                    => (Some([]),         None);
             // push 1, push 0, swap
-            swap:       b"    \t\n    \n \n\t"            => (Some([1, 0]),      None);
+            swap:       b"    \t\n    \n \n\t"              => (Some([1, 0]),     None);
             // push 0, push 1, copy 1
-            copy:       b"   \n    \t\n \t   \t\n"        => (Some([0, 1, 0]),   None);
+            copy:       b"   \n    \t\n \t   \t\n"          => (Some([0, 1, 0]),  None);
         }
 
         arithmetic: {
             // push 1, push 3, add
-            add:        b"   \t\n   \t\t\n\t   "          => (Some([4]),         None);
+            add:        b"   \t\n   \t\t\n\t   "            => (Some([4]),        None);
             // push -1, push 3, add
-            add_neg:    b"  \t\t\n   \t\t\n\t   "         => (Some([2]),         None);
+            add_neg:    b"  \t\t\n   \t\t\n\t   "           => (Some([2]),        None);
             // push 3, push 1, subtract
-            sub:        b"   \t\t\n   \t\n\t  \t"         => (Some([2]),         None);
+            sub:        b"   \t\t\n   \t\n\t  \t"           => (Some([2]),        None);
             // push 1, push 3, subtract
-            sub_neg:    b"   \t\n   \t\t\n\t  \t"         => (Some([-2]),        None);
+            sub_neg:    b"   \t\n   \t\t\n\t  \t"           => (Some([-2]),       None);
+            // push 2, push 3, multiply
+            mul:        b"   \t \n   \t\t\n\t  \n"          => (Some([6]),        None);
+            // push -2, push 3, multiply
+            mul_neg:    b"  \t\t \n   \t\t\n\t  \n"         => (Some([-6]),       None);
+            // push -2, push -3, multiply
+            mul_neg_2:  b"  \t\t \n  \t\t\t\n\t  \n"        => (Some([6]),        None);
+            // push 4, push 2, divide
+            div:        b"   \t  \n   \t \n\t \t "          => (Some([2]),        None);
+            // push 5, push 2, divide
+            div_round:  b"   \t \t\n   \t \n\t \t "         => (Some([2]),        None);
+            // push -4, push 2, divide
+            div_neg:    b"  \t\t  \n   \t \n\t \t "         => (Some([-2]),       None);
+            // push -4, push -2, divide
+            div_neg_2:  b"  \t\t  \n  \t\t \n\t \t "        => (Some([2]),        None);
+            // push 5, push 2, modulo
+            modulo:     b"   \t \t\n   \t \n\t \t\t"        => (Some([1]),        None);
+            // push 2, push 5, modulo
+            modulo_2:   b"   \t \n   \t \t\n\t \t\t"        => (Some([2]),        None);
         }
     }
 }
