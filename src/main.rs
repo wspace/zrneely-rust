@@ -103,5 +103,8 @@ mod runtest {
         swap: b"    \t\n    \n \n\t"            => (Some(&[1, 0]),      None);
         // push 0, push 1, copy 1
         copy: b"   \n    \t\n \t   \t\n"        => (Some(&[0, 1, 0]),   None);
+
+        // push 1, push 3, add
+        add:  b"   \t\n   \t\t\n\t   "          => (Some(&[4]),         None);
     }
 }

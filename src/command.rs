@@ -199,6 +199,35 @@ impl Command {
                 // call rcx
                 vec![0xff, 0xd1],
             ].concat(),
+            Command::Add => vec![
+                // mov rdi, &context
+                mov_le(RDI, refint!(context)),
+                // mov rcx, pop_stack
+                mov_le(RCX, Context::pop_stack as u64),
+                // call rcx
+                vec![0xff, 0xd1],
+                // mov r12, rax
+                vec![0x49, 0x89, 0xc4],
+
+                // mov rdi, &context
+                mov_le(RDI, refint!(context)),
+                // mov rcx, pop_stack
+                mov_le(RCX, Context::pop_stack as u64),
+                // call rcx
+                vec![0xff, 0xd1],
+
+                // add rax, r12
+                vec![0x4c, 0x01, 0xe0],
+
+                // mov rdi, &context
+                mov_le(RDI, refint!(context)),
+                // mov rsi, rax
+                vec![0x48, 0x89, 0xc6],
+                // mov rcx, push_stack
+                mov_le(RCX, Context::push_stack as u64),
+                // call rcx
+                vec![0xff, 0xd1],
+            ].concat(),
             _ => unimplemented!(),
         }
     }
