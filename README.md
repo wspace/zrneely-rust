@@ -18,7 +18,8 @@ The Compiler
 
 This is a Just-In-Time compiler/interpreter for Whitespace. It interprets a program written
 in Whitespace, parses it, and generates and runs x86-64 machine code which is equivalent to
-the input program.
+the input program. Unfortunately we do violate the specification a little for simplicity's sake:
+integers are not arbitrary-width, and are instead always 64 bits wide.
 
 
 Motivation

@@ -23,6 +23,7 @@ pub enum Command {
     Copy(Number),
     Swap,
     Pop,
+    Slide(Number),
 
     // Arithmetic commands
     Add,

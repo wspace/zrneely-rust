@@ -57,7 +57,8 @@ named!(pub stack<Command>, alt!(
     map!(tag!("\n "), |_| Command::Duplicate) |
     map!(preceded!(tag!("\t "), number), |n| Command::Copy(n)) |
     map!(tag!("\n\t"), |_| Command::Swap) |
-    map!(tag!("\n\n"), |_| Command::Pop)
+    map!(tag!("\n\n"), |_| Command::Pop) |
+    map!(preceded!(tag!("\t\n"), number), |n| Command::Slide(n))
 ));
 
 /// Identifies a arithmetic instruction.
