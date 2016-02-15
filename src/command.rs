@@ -59,23 +59,53 @@ const RDX: u8 = 0xba;
 const RDI: u8 = 0xbf;
 const RSI: u8 = 0xbe;
 /// little-endian move
-fn mov_le(reg: u8, n: u64) -> Vec<u8> {
-    vec![
-        0x48,
-        reg,
-        ((n >> 0x00) as u8),
-        ((n >> 0x08) as u8),
-        ((n >> 0x10) as u8),
-        ((n >> 0x18) as u8),
-        ((n >> 0x20) as u8),
-        ((n >> 0x28) as u8),
-        ((n >> 0x30) as u8),
-        ((n >> 0x38) as u8),
-    ]
+macro_rules! mov_le {
+    ($x:ident <- $y:expr) => {
+        {
+            let n: u64 = $y;
+            vec![
+                0x48,
+                $x,
+                ((n >> 0x00) as u8),
+                ((n >> 0x08) as u8),
+                ((n >> 0x10) as u8),
+                ((n >> 0x18) as u8),
+                ((n >> 0x20) as u8),
+                ((n >> 0x28) as u8),
+                ((n >> 0x30) as u8),
+                ((n >> 0x38) as u8),
+            ]
+        }
+    }
 }
 
-macro_rules! refint {
-    ($x:expr) => ($x as *const _ as u64)
+macro_rules! fn_call {
+    ($x:ident : $y:expr, RSI: $z:expr) => {
+        vec![
+            mov_le!(RDI <- $y as *const _ as u64),
+            mov_le!(RSI <- $z),
+            mov_le!(RCX <- $crate::wsstd::Context::$x as u64),
+            // call rcx
+            vec![0xff, 0xd1],
+        ].concat()
+    };
+    ($x:ident : $y:expr, RSI_setter: $z:expr) => {
+        vec![
+            mov_le!(RDI <- $y as *const _ as u64),
+            $z,
+            mov_le!(RCX <- $crate::wsstd::Context::$x as u64),
+            // call rcx
+            vec![0xff, 0xd1],
+        ].concat()
+    };
+    ($x:ident : $y:expr) => {
+        vec![
+            mov_le!(RDI <- $y as *const _ as u64),
+            mov_le!(RCX <- $crate::wsstd::Context::$x as u64),
+            // call rcx
+            vec![0xff, 0xd1],
+        ].concat()
+    };
 }
 
 impl Command {
@@ -107,127 +137,44 @@ impl Command {
                 // ret
                 0xc3
             ],
-            Command::Push(n) => vec![
-                // mov rdi, &context
-                mov_le(RDI, refint!(context)),
-                // mov rsi, n
-                mov_le(RSI, n as u64),
-                // mov rax, push_stack
-                mov_le(RAX, Context::push_stack as u64),
-                // call rax
-                vec![0xff, 0xd0],
-            ].concat(),
+            Command::Push(n) => fn_call!(push_stack: context, RSI: n as u64),
             Command::Duplicate => vec![
-                // mov rdi, &context
-                mov_le(RDI, refint!(context)),
-                // mov rsi, 0
-                mov_le(RSI, 0),
-                // mov rcx, peek_stack
-                mov_le(RCX, Context::peek_stack as u64),
-                // call rcx     ; result is in rax
-                vec![0xff, 0xd1],
-
-                // mov rdi, &context
-                mov_le(RDI, refint!(context)),
-                // mov rsi, rax
-                vec![0x48, 0x89, 0xc6],
-                // mov rcx, push_stack
-                mov_le(RCX, Context::push_stack as u64),
-                // call rcx     ; result is in rax
-                vec![0xff, 0xd1],
+                fn_call!(peek_stack: context, RSI: 0),
+                fn_call!(push_stack: context, RSI_setter: vec![0x48, 0x89, 0xc6]),
+                                                           // mov rsi, rax
             ].concat(),
             Command::Swap => vec![
-                // mov rdi, &context
-                mov_le(RDI, refint!(context)),
-                // mov rcx, pop_stack
-                mov_le(RCX, Context::pop_stack as u64),
-                // call rcx     ; result is in rax
-                vec![0xff, 0xd1],
-                // mov rbx, rax ; store returned value elsewhere
+                fn_call!(pop_stack: context),
+                // mov rbx, rax
                 vec![0x48, 0x89, 0xc3],
 
-                // mov rdi, &context
-                mov_le(RDI, refint!(context)),
-                // mov rcx, pop_stack
-                mov_le(RCX, Context::pop_stack as u64),
-                // call rcx     ; result is in rax
-                vec![0xff, 0xd1],
+                fn_call!(pop_stack: context),
                 // mov r12, rax ; store returned value elsewhere
                 vec![0x49, 0x89, 0xc4],
 
-                // mov rdi, &context
-                mov_le(RDI, refint!(context)),
-                // mov rsi, rbx
-                vec![0x48, 0x89, 0xde],
-                // mov rcx, push_stack
-                mov_le(RCX, Context::push_stack as u64),
-                // call rcx
-                vec![0xff, 0xd1],
+                fn_call!(push_stack: context, RSI_setter: vec![0x48, 0x89, 0xde]),
+                                                          // mov rsi, rbx
 
-                // mov rdi, &context
-                mov_le(RDI, refint!(context)),
-                // mov rsi, r12
-                vec![0x4c, 0x89, 0xe6],
-                // mov rcx, push_stack
-                mov_le(RCX, Context::push_stack as u64),
-                // call rcx
-                vec![0xff, 0xd1],
+                fn_call!(push_stack: context, RSI_setter: vec![0x4c, 0x89, 0xe6]),
+                                                          // mov rsi, r12
             ].concat(),
-            Command::Pop => vec![
-                // mov rdi, &context
-                mov_le(RDI, refint!(context)),
-                // mov rcx, pop_stack
-                mov_le(RCX, Context::pop_stack as u64),
-                // call rcx     ; result is in rax
-                vec![0xff, 0xd1],
-            ].concat(),
+            Command::Pop => fn_call!(pop_stack: context),
             Command::Copy(n) => vec![
-                // mov rdi, &context
-                mov_le(RDI, refint!(context)),
-                // mov rsi, n
-                mov_le(RSI, n as u64),
-                // mov rcx, peek_stack
-                mov_le(RCX, Context::peek_stack as u64),
-                // call rcx     ; result is in rax
-                vec![0xff, 0xd1],
-
-                // mov rdi, &context
-                mov_le(RDI, refint!(context)),
-                // mov rsi, rax
-                vec![0x48, 0x89, 0xc6],
-                // mov rcx, push_stack
-                mov_le(RCX, Context::push_stack as u64),
-                // call rcx
-                vec![0xff, 0xd1],
+                fn_call!(peek_stack: context, RSI: n as u64),
+                fn_call!(push_stack: context, RSI_setter: vec![0x48, 0x89, 0xc6]),
+                                                          // mov rsi, rax
             ].concat(),
             Command::Add => vec![
-                // mov rdi, &context
-                mov_le(RDI, refint!(context)),
-                // mov rcx, pop_stack
-                mov_le(RCX, Context::pop_stack as u64),
-                // call rcx
-                vec![0xff, 0xd1],
+                fn_call!(pop_stack: context),
                 // mov r12, rax
                 vec![0x49, 0x89, 0xc4],
 
-                // mov rdi, &context
-                mov_le(RDI, refint!(context)),
-                // mov rcx, pop_stack
-                mov_le(RCX, Context::pop_stack as u64),
-                // call rcx
-                vec![0xff, 0xd1],
+                fn_call!(pop_stack: context),
 
                 // add rax, r12
                 vec![0x4c, 0x01, 0xe0],
 
-                // mov rdi, &context
-                mov_le(RDI, refint!(context)),
-                // mov rsi, rax
-                vec![0x48, 0x89, 0xc6],
-                // mov rcx, push_stack
-                mov_le(RCX, Context::push_stack as u64),
-                // call rcx
-                vec![0xff, 0xd1],
+                fn_call!(push_stack: context, RSI_setter: vec![0x48, 0x89, 0xc6]),
             ].concat(),
             _ => unimplemented!(),
         }
