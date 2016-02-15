@@ -111,7 +111,7 @@ macro_rules! fn_call {
 impl Command {
     /// Converts this command into assembly.
     /// TODO handle "linking"
-    pub fn assemble(self, context: &Context) -> Vec<u8> {
+    pub fn assemble(self, c: &Context) -> Vec<u8> {
         match self {
             Command::Initialize => vec![
                 // push rbp
@@ -137,44 +137,56 @@ impl Command {
                 // ret
                 0xc3
             ],
-            Command::Push(n) => fn_call!(push_stack: context, RSI: n as u64),
+            Command::Push(n) => fn_call!(push_stack: c, RSI: n as u64),
             Command::Duplicate => vec![
-                fn_call!(peek_stack: context, RSI: 0),
-                fn_call!(push_stack: context, RSI_setter: vec![0x48, 0x89, 0xc6]),
+                fn_call!(peek_stack: c, RSI: 0),
+                fn_call!(push_stack: c, RSI_setter: vec![0x48, 0x89, 0xc6]),
                                                            // mov rsi, rax
             ].concat(),
             Command::Swap => vec![
-                fn_call!(pop_stack: context),
+                fn_call!(pop_stack: c),
                 // mov rbx, rax
                 vec![0x48, 0x89, 0xc3],
 
-                fn_call!(pop_stack: context),
+                fn_call!(pop_stack: c),
                 // mov r12, rax ; store returned value elsewhere
                 vec![0x49, 0x89, 0xc4],
 
-                fn_call!(push_stack: context, RSI_setter: vec![0x48, 0x89, 0xde]),
+                fn_call!(push_stack: c, RSI_setter: vec![0x48, 0x89, 0xde]),
                                                           // mov rsi, rbx
 
-                fn_call!(push_stack: context, RSI_setter: vec![0x4c, 0x89, 0xe6]),
+                fn_call!(push_stack: c, RSI_setter: vec![0x4c, 0x89, 0xe6]),
                                                           // mov rsi, r12
             ].concat(),
-            Command::Pop => fn_call!(pop_stack: context),
+            Command::Pop => fn_call!(pop_stack: c),
             Command::Copy(n) => vec![
-                fn_call!(peek_stack: context, RSI: n as u64),
-                fn_call!(push_stack: context, RSI_setter: vec![0x48, 0x89, 0xc6]),
+                fn_call!(peek_stack: c, RSI: n as u64),
+                fn_call!(push_stack: c, RSI_setter: vec![0x48, 0x89, 0xc6]),
                                                           // mov rsi, rax
             ].concat(),
             Command::Add => vec![
-                fn_call!(pop_stack: context),
+                fn_call!(pop_stack: c),
                 // mov r12, rax
                 vec![0x49, 0x89, 0xc4],
 
-                fn_call!(pop_stack: context),
+                fn_call!(pop_stack: c),
 
                 // add rax, r12
                 vec![0x4c, 0x01, 0xe0],
 
-                fn_call!(push_stack: context, RSI_setter: vec![0x48, 0x89, 0xc6]),
+                fn_call!(push_stack: c, RSI_setter: vec![0x48, 0x89, 0xc6]),
+            ].concat(),
+            Command::Subtract => vec![
+                fn_call!(pop_stack: c),
+                // mov r12, rax
+                vec![0x49, 0x89, 0xc4],
+
+                fn_call!(pop_stack: c),
+
+                // sub rax, r12
+                vec![0x4c, 0x29, 0xe0],
+
+                fn_call!(push_stack: c, RSI_setter: vec![0x48, 0x89, 0xc6]),
             ].concat(),
             _ => unimplemented!(),
         }
