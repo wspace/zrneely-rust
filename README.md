@@ -21,6 +21,8 @@ in Whitespace, parses it, and generates and runs x86-64 machine code which is eq
 the input program. Unfortunately we do violate the specification a little for simplicity's sake:
 * Integers are not arbitrary-width, and are instead always 64 bits wide.
 * The modulo operator produces undefined results when either operand is negative.
+* When outputting characters, only ASCII values are supported. The encoding is not defined in the
+  spec.
 
 
 Motivation

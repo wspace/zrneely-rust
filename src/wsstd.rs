@@ -101,12 +101,12 @@ impl Context {
     }
 
     /// Called from jit-ed code. Displays data to stdout.
-    pub unsafe extern fn print(data: Number, is_char: bool) {
+    pub unsafe extern fn print(&self, is_char: bool) {
+        let num = self.peek_stack(0);
         if is_char {
-            // TODO
-            unimplemented!()
+            print!("{}", String::from_utf8(vec![num as u8]).expect("Non-ascii print"));
         } else {
-            println!("{}", data);
+            print!("{}", num);
         }
     }
 

@@ -194,6 +194,8 @@ impl Command {
                                                // idiv r12
                                                0x48, 0x89, 0xd0]),
                                                // mov rax, rdx
+            Command::OutputChar => fn_call!(print: c, RSI: 1),
+            Command::OutputNum => fn_call!(print: c, RSI: 0),
             _ => unimplemented!(),
         }
     }

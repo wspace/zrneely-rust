@@ -109,6 +109,15 @@ mod tests {
             copy:       b"   \n    \t\n \t   \t\n"          => (Some([0, 1, 0]),  None);
         }
 
+        io: {
+            // push 65, out_char
+            // TODO how to test contents of stdout?
+            char_out:   b"   \t     \t\n\t\n  "             => (Some([65]),       None);
+            // push 65, out_int
+            // TODO how to test contents of stdout?
+            int_out:    b"   \t     \t\n\t\n \t"            => (Some([65]),       None);
+        }
+
         arithmetic: {
             // push 1, push 3, add
             add:        b"   \t\n   \t\t\n\t   "            => (Some([4]),        None);
