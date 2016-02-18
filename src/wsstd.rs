@@ -1,8 +1,12 @@
+#![feature(as_unsafe_cell)]
 
 extern crate libc;
 
 use std::collections::HashMap;
+use std::rc::Rc;
+use std::cell::RefCell;
 use std::fmt;
+use std::io::{self, Read, Write};
 
 pub type Number = i64;
 pub type Address = usize;
@@ -30,6 +34,9 @@ pub struct Context {
     pub heap: HashMap<Label, Number>,
     // maps literals to jump-to-able addresses in the function
     pub labels: HashMap<Label, Address>,
+
+    stdin: Rc<RefCell<Read>>,
+    stdout: Rc<RefCell<Write>>,
 }
 
 impl fmt::Debug for Context {
@@ -49,7 +56,14 @@ impl Context {
             stack: Vec::new(),
             heap: HashMap::new(),
             labels: HashMap::new(),
+            stdin: Rc::new(RefCell::new(io::stdin())),
+            stdout: Rc::new(RefCell::new(io::stdout())),
         }
+    }
+
+    /// Allows capturing stdout; very useful for test cases
+    pub fn capture_stdout(&mut self, out: Rc<RefCell<Write>>) {
+        self.stdout = out;
     }
 
     // Marked as unsafe to indicate that they're not meant to be called
@@ -101,12 +115,14 @@ impl Context {
     }
 
     /// Called from jit-ed code. Displays data to stdout.
-    pub unsafe extern fn print(&self, is_char: bool) {
+    pub unsafe extern fn print(&mut self, is_char: bool) {
         let num = self.peek_stack(0);
+        let out = self.stdout.as_unsafe_cell().get();
         if is_char {
-            print!("{}", String::from_utf8(vec![num as u8]).expect("Non-ascii print"));
+            write!(*out, "{}",
+                   String::from_utf8(vec![num as u8]).expect("Non-ascii print")).unwrap();
         } else {
-            print!("{}", num);
+            write!(*out, "{}", num).unwrap();
         }
     }
 
