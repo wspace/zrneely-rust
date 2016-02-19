@@ -189,5 +189,12 @@ mod tests {
             // push 2, push 5, modulo
             modulo_2:   b"   \t \n   \t \t\n\t \t\t"        => out!(2);
         }
+
+        flow: {
+            // push 1, exit, push 2
+            exit:      inp!("   \t\n\n\n\n   \t \n")       => out!([1]; "";  {});
+        }
     }
+
+    // TODO test exit and other flow control commands
 }

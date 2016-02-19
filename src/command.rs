@@ -139,7 +139,7 @@ impl Command {
                 // push r12
                 0x41, 0x54,
             ],
-            Command::Deinitialize => vec![
+            Command::Deinitialize | Command::Exit => vec![
                 // pop r12
                 0x41, 0x5c,
                 // pop rbx
