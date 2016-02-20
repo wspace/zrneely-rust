@@ -196,7 +196,10 @@ impl Command {
             Command::ReadChar => fn_call!(read: c, RSI: 1),
             Command::ReadNum => fn_call!(read: c, RSI: 1),
             Command::Store => fn_call!(store: c),
-            Command::Retrieve => fn_call!(retrieve: c),
+            Command::Retrieve => vec![
+                fn_call!(retrieve: c),
+                fn_call!(push_stack: c, RSI_setter: vec![0x48, 0x89, 0xc6]),
+            ].concat(),
             _ => unimplemented!(),
         }
     }

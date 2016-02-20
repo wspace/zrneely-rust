@@ -112,16 +112,6 @@ impl Context {
         *self.heap.get(&self.stack.get(self.stack.len() - 1).unwrap()).unwrap()
     }
 
-    /// Called from jit-ed code. Stores a label.
-    pub unsafe extern fn store_label(&mut self, name: Label, ptr: Address) {
-        self.labels.insert(name, ptr);
-    }
-
-    /// Called from jit-ed code. Retrieves a label.
-    pub unsafe extern fn retrieve_label(&self, name: Label) -> Address {
-        *self.labels.get(&name).unwrap()
-    }
-
     /// Called from jit-ed code. Displays data to stdout.
     pub unsafe extern fn print(&mut self, is_char: bool) {
         let num = self.peek_stack(0);

@@ -176,15 +176,17 @@ mod tests {
             // push "1", push 5, store
             store:     inp!("   \t\n   \t \t\n\t\t ")      => out!([5, 1]; "";
                                                                    { 1 => 5 });
-            // push "110", push 5, store
-            store_2:   inp!("   \t\t \n   \t \t\n\t\t ")   => out!([5, 6]; "";
-                                                                   { 6 => 5 });
             // push "101", push 5, store, push "111", push 6, store
-            store_3:   inp!("   \t \t\n   \t \t\n\t\t    \t\t\t\n   \t\t \n\t\t ")
+            store_2:   inp!("   \t \t\n   \t \t\n\t\t    \t\t\t\n   \t\t \n\t\t ")
                                                            => out!([6, 7, 5, 5]; ""; {
                                                                        5 => 5
                                                                        7 => 6
                                                                    });
+            // push "101", push 3, store, push "101", retrieve
+            ret:       inp!("   \t \t\n   \t\t\n\t\t    \t \t\n\t\t\t")
+                                                           => out!([3, 5, 3, 5]; ""; {
+                                                                       5 => 3
+                                                                  });
         }
 
         io: {
