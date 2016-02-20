@@ -31,11 +31,11 @@ impl Label {
 /// The context of a running program.
 pub struct Context {
     pub stack: Vec<Number>,
-    pub heap: HashMap<Label, Number>,
+    pub heap: HashMap<Number, Number>,
     // maps literals to jump-to-able addresses in the function
     pub labels: HashMap<Label, Address>,
 
-    stdin: Rc<RefCell<Read>>,
+    stdin: Box<Read>,
     stdout: Rc<RefCell<Write>>,
 }
 
@@ -56,7 +56,7 @@ impl Context {
             stack: Vec::new(),
             heap: HashMap::new(),
             labels: HashMap::new(),
-            stdin: Rc::new(RefCell::new(io::stdin())),
+            stdin: Box::new(io::stdin()),
             stdout: Rc::new(RefCell::new(io::stdout())),
         }
     }
@@ -64,6 +64,11 @@ impl Context {
     /// Allows capturing stdout; very useful for test cases
     pub fn capture_stdout(&mut self, out: Rc<RefCell<Write>>) {
         self.stdout = out;
+    }
+
+    /// Allows providing stdin; very useful for test cases
+    pub fn provide_stdin(&mut self, inp: &'static str) {
+        self.stdin = Box::new(inp.as_bytes());
     }
 
     // Marked as unsafe to indicate that they're not meant to be called
@@ -94,14 +99,17 @@ impl Context {
         }
     }
 
-    /// Called from jit-ed code. Puts data in the heap.
-    pub unsafe extern fn store(&mut self, name: Label, value: Number) {
-        self.heap.insert(name, value);
+    /// Called from jit-ed code. Reads the two values on top of the heap and stores
+    /// them.
+    pub unsafe extern fn store(&mut self) {
+        let name = self.stack.get(self.stack.len() - 2).unwrap();
+        let value = self.stack.get(self.stack.len() - 1).unwrap();
+        self.heap.insert(*name, *value);
     }
 
     /// Called from jit-ed code. Retrieves data from the heap.
-    pub unsafe extern fn retrieve(&self, name: Label) -> Number {
-        *self.heap.get(&name).unwrap()
+    pub unsafe extern fn retrieve(&self) -> Number {
+        *self.heap.get(&self.stack.get(self.stack.len() - 1).unwrap()).unwrap()
     }
 
     /// Called from jit-ed code. Stores a label.

@@ -145,7 +145,6 @@ impl<'a> IndexMut<usize> for JitMemory<'a> {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use wsstd::Context;
 
     fn check_output(program: &[u8], output: i64) {
         let mut memory = JitMemory::new(program.len() / JitMemory::get_page_size() + 1);

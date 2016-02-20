@@ -52,10 +52,7 @@ pub enum Command {
     ReadNum,
 }
 
-const RAX: u8 = 0xb8;
-const RBX: u8 = 0xbb;
 const RCX: u8 = 0xb9;
-const RDX: u8 = 0xba;
 const RDI: u8 = 0xbf;
 const RSI: u8 = 0xbe;
 /// little-endian move
@@ -196,6 +193,10 @@ impl Command {
                                                // mov rax, rdx
             Command::OutputChar => fn_call!(print: c, RSI: 1),
             Command::OutputNum => fn_call!(print: c, RSI: 0),
+            Command::ReadChar => fn_call!(read: c, RSI: 1),
+            Command::ReadNum => fn_call!(read: c, RSI: 1),
+            Command::Store => fn_call!(store: c),
+            Command::Retrieve => fn_call!(retrieve: c),
             _ => unimplemented!(),
         }
     }
