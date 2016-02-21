@@ -1,6 +1,6 @@
 
 use command::*;
-use {Number, Label};
+use {Label, Number};
 
 // TODO properly handle "comments" aka non-legal characters, which should be
 // ignored per the spec.
@@ -200,11 +200,26 @@ mod tests {
 
     #[test]
     fn test_flow() {
-        nom_match!(flow, b"   \t\n", Command::Mark(Label::Name(vec![false, true])), NP);
-        nom_match!(flow, b" \t \t\n", Command::Call(Label::Name(vec![false, true])), NP);
-        nom_match!(flow, b" \n \t\n", Command::Jump(Label::Name(vec![false, true])), NP);
-        nom_match!(flow, b"\t  \t\n", Command::JumpZero(Label::Name(vec![false, true])), NP);
-        nom_match!(flow, b"\t\t \t\n", Command::JumpNegative(Label::Name(vec![false, true])), NP);
+        nom_match!(flow,
+                   b"   \t\n",
+                   Command::Mark(Label::Name(vec![false, true])),
+                   NP);
+        nom_match!(flow,
+                   b" \t \t\n",
+                   Command::Call(Label::Name(vec![false, true])),
+                   NP);
+        nom_match!(flow,
+                   b" \n \t\n",
+                   Command::Jump(Label::Name(vec![false, true])),
+                   NP);
+        nom_match!(flow,
+                   b"\t  \t\n",
+                   Command::JumpZero(Label::Name(vec![false, true])),
+                   NP);
+        nom_match!(flow,
+                   b"\t\t \t\n",
+                   Command::JumpNegative(Label::Name(vec![false, true])),
+                   NP);
         nom_match!(flow, b"\t\n", Command::Return, NP);
         nom_match!(flow, b"\n\n", Command::Exit, NP);
 
@@ -228,8 +243,16 @@ mod tests {
         nom_match!(command, b"\n\n\n", Command::Exit, NP);
         nom_match!(command, b"\t  \t", Command::Subtract, NP);
         nom_match!(command, b"   \t \t \n", Command::Push(10), NP);
-        nom_match!(command, b"\n   \t    \t\t\n", Command::Mark(Label::Name(vec![false, true, false, false, false, false, true, true])), NP);
-        nom_match!(command, b"\n\t  \t   \t \t\n", Command::JumpZero(Label::Name(vec![false, true, false, false, false, true, false, true])), NP);
+        nom_match!(command,
+                   b"\n   \t    \t\t\n",
+                   Command::Mark(Label::Name(vec![false, true, false, false, false, false,
+                                                  true, true])),
+                   NP);
+        nom_match!(command,
+                   b"\n\t  \t   \t \t\n",
+                   Command::JumpZero(Label::Name(vec![false, true, false, false, false, true,
+                                                      false, true])),
+                   NP);
 
         nom_no_match!(command,
                       b"\t\n \n",
@@ -241,7 +264,8 @@ mod tests {
         nom_match!(program,
                    b"   \t\n\n   \t    \t\t\n \n  \n\n\n\n\n",
                    vec![Command::Push(1),
-                        Command::Mark(Label::Name(vec![false, true, false, false, false, false, true, true])),
+                        Command::Mark(Label::Name(vec![false, true, false, false, false,
+                                                       false, true, true])),
                         Command::Duplicate,
                         Command::Pop,
                         Command::Exit],

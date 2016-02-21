@@ -1,5 +1,5 @@
 
-use {Number, Label};
+use {Label, Number};
 use wsstd::Context;
 
 #[derive(PartialEq, Eq, Clone, Debug)]

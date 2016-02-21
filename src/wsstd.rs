@@ -6,7 +6,7 @@ use std::collections::HashMap;
 use std::rc::Rc;
 use std::cell::RefCell;
 use std::fmt;
-use std::io::{self, Read, BufRead, BufReader, Write};
+use std::io::{self, BufRead, BufReader, Read, Write};
 
 pub type Number = i64;
 pub type Address = usize;
@@ -76,7 +76,7 @@ impl Context {
 
     /// Called from jit-ed code. Pushes a value onto the stack, then
     /// returns that same value.
-    pub unsafe extern fn push_stack(&mut self, arg: Number) -> Number {
+    pub unsafe extern "C" fn push_stack(&mut self, arg: Number) -> Number {
         self.stack.push(arg);
         arg
     }
@@ -84,13 +84,16 @@ impl Context {
     /// Called from jit-ed code. Pops a value off the stack, returning that value.
     /// If the stack is empty, returns 0. The situation where the stack is empty
     /// isn't defined in the spec, but it's hard to deal with panics across FFI boundaries.
-    pub unsafe extern fn pop_stack(&mut self) -> Number {
-        self.stack.pop().unwrap_or_else(|| { Context::err("WS pop stack error!"); 0 })
+    pub unsafe extern "C" fn pop_stack(&mut self) -> Number {
+        self.stack.pop().unwrap_or_else(|| {
+            Context::err("WS pop stack error!");
+            0
+        })
     }
 
     /// Called from jit-ed code. Reads a value from the n'th place in the stack, and
     /// returns it.
-    pub unsafe extern fn peek_stack(&self, arg: Number) -> Number {
+    pub unsafe extern "C" fn peek_stack(&self, arg: Number) -> Number {
         if let Some(val) = self.stack.get(self.stack.len() - arg as usize - 1) {
             *val
         } else {
@@ -101,31 +104,33 @@ impl Context {
 
     /// Called from jit-ed code. Reads the two values on top of the heap and stores
     /// them.
-    pub unsafe extern fn store(&mut self) {
+    pub unsafe extern "C" fn store(&mut self) {
         let name = self.stack.get(self.stack.len() - 2).unwrap();
         let value = self.stack.get(self.stack.len() - 1).unwrap();
         self.heap.insert(*name, *value);
     }
 
     /// Called from jit-ed code. Retrieves data from the heap.
-    pub unsafe extern fn retrieve(&self) -> Number {
+    pub unsafe extern "C" fn retrieve(&self) -> Number {
         *self.heap.get(&self.stack.get(self.stack.len() - 1).unwrap()).unwrap()
     }
 
     /// Called from jit-ed code. Displays data to stdout.
-    pub unsafe extern fn print(&mut self, is_char: bool) {
+    pub unsafe extern "C" fn print(&mut self, is_char: bool) {
         let num = self.peek_stack(0);
         let out = self.stdout.as_unsafe_cell().get();
         if is_char {
-            write!(*out, "{}",
-                   String::from_utf8(vec![num as u8]).expect("Non-ascii print")).unwrap();
+            write!(*out,
+                   "{}",
+                   String::from_utf8(vec![num as u8]).expect("Non-ascii print"))
+                .unwrap();
         } else {
             write!(*out, "{}", num).unwrap();
         }
     }
 
     /// Called from jit-ed code. Reads data from stdin.
-    pub unsafe extern fn read(&mut self, is_char: bool) {
+    pub unsafe extern "C" fn read(&mut self, is_char: bool) {
         let name = self.stack.get(self.stack.len() - 1).unwrap();
         let mut line = String::new();
         if is_char {

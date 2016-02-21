@@ -15,7 +15,7 @@ use command::Command;
 use jit::{JitFunction, JitMemory};
 use wsstd::Context;
 
-pub use wsstd::{Number, Label};
+pub use wsstd::{Label, Number};
 
 fn get_native_function<'a>(program: Vec<Command>, context: &'a mut Context) -> JitFunction<'a> {
     let machine_code = program.into_iter()
@@ -39,7 +39,7 @@ fn parse(program: &[u8]) -> Option<Vec<Command>> {
             program.push(Command::Deinitialize);
             Some(program)
         }
-        _ => None
+        _ => None,
     }
 }
 
@@ -86,7 +86,7 @@ mod tests {
     struct Output {
         stdout: String,
         stack: Vec<i64>,
-        heap: HashMap<i64, i64>
+        heap: HashMap<i64, i64>,
     }
 
     macro_rules! out {
