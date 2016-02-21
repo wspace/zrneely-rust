@@ -194,7 +194,7 @@ impl Command {
             Command::OutputChar => fn_call!(print: c, RSI: 1),
             Command::OutputNum => fn_call!(print: c, RSI: 0),
             Command::ReadChar => fn_call!(read: c, RSI: 1),
-            Command::ReadNum => fn_call!(read: c, RSI: 1),
+            Command::ReadNum => fn_call!(read: c, RSI: 0),
             Command::Store => fn_call!(store: c),
             Command::Retrieve => vec![
                 fn_call!(retrieve: c),

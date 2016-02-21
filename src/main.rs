@@ -194,6 +194,10 @@ mod tests {
             char_out:  inp!("   \t     \t\n\t\n  ")        => out!([65]; "A"; {});
             // push 65, out_int
             int_out:   inp!("   \t     \t\n\t\n \t")       => out!([65]; "65"; {});
+            // push "101", in_char
+            char_in:   inp!("   \t \t\n\t\n\t "; "A\n")    => out!([5]; ""; { 5 => 65 });
+            // push "101", in_int
+            int_in:    inp!("   \t \t\n\t\n\t\t"; "65")    => out!([5]; ""; { 5 => 65 });
         }
 
         arithmetic: {
@@ -231,5 +235,4 @@ mod tests {
         }
     }
 
-    // TODO test exit and other flow control commands
 }

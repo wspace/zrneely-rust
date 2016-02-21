@@ -6,7 +6,7 @@ use std::collections::HashMap;
 use std::rc::Rc;
 use std::cell::RefCell;
 use std::fmt;
-use std::io::{self, Read, Write};
+use std::io::{self, Read, BufRead, BufReader, Write};
 
 pub type Number = i64;
 pub type Address = usize;
@@ -35,7 +35,7 @@ pub struct Context {
     // maps literals to jump-to-able addresses in the function
     pub labels: HashMap<Label, Address>,
 
-    stdin: Box<Read>,
+    stdin: BufReader<Box<Read>>,
     stdout: Rc<RefCell<Write>>,
 }
 
@@ -56,7 +56,7 @@ impl Context {
             stack: Vec::new(),
             heap: HashMap::new(),
             labels: HashMap::new(),
-            stdin: Box::new(io::stdin()),
+            stdin: BufReader::new(Box::new(io::stdin())),
             stdout: Rc::new(RefCell::new(io::stdout())),
         }
     }
@@ -68,7 +68,7 @@ impl Context {
 
     /// Allows providing stdin; very useful for test cases
     pub fn provide_stdin(&mut self, inp: &'static str) {
-        self.stdin = Box::new(inp.as_bytes());
+        self.stdin = BufReader::new(Box::new(inp.as_bytes()));
     }
 
     // Marked as unsafe to indicate that they're not meant to be called
@@ -125,13 +125,15 @@ impl Context {
     }
 
     /// Called from jit-ed code. Reads data from stdin.
-    pub unsafe extern fn read(is_char: bool) -> Number {
+    pub unsafe extern fn read(&mut self, is_char: bool) {
+        let name = self.stack.get(self.stack.len() - 1).unwrap();
+        let mut line = String::new();
         if is_char {
-            // TODO
-            unimplemented!()
+            self.stdin.read_line(&mut line).unwrap();
+            self.heap.insert(*name, line.as_bytes()[0] as i64);
         } else {
-            // TODO
-            unimplemented!()
+            self.stdin.read_line(&mut line).unwrap();
+            self.heap.insert(*name, i64::from_str_radix(&line, 10).unwrap());
         }
     }
 

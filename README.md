@@ -23,6 +23,9 @@ the input program. Unfortunately we do violate the specification a little for si
 * The modulo operator produces undefined results when either operand is negative.
 * When outputting characters, only ASCII values are supported. The encoding is not defined in the
   spec.
+* When reading characters, it is required for the user to press enter between each character. This
+  is for simplicity - it would require the ncurses library to read characters without requiring an
+  enter press due to the way stdin is buffered. This may be fixed later.
 
 
 Motivation
