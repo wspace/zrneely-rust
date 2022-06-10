@@ -120,20 +120,20 @@ mod tests {
         ($parser: ident, $test: expr, $err: expr) => {
             match $parser($test) {
                 IResult::Done(_, _) => {},
-                _ => panic!($err),
+                _ => panic!("{}", $err),
             };
         };
         ($parser: ident, $test: expr, $expected: expr, $err: expr) => {
             assert_eq!($expected, match $parser($test) {
                 IResult::Done(_, n) => n,
-                _ => panic!($err),
+                _ => panic!("{}", $err),
             });
         };
     }
     macro_rules! nom_no_match {
         ($parser: ident, $test: expr, $err: expr) => {
             match $parser($test) {
-                IResult::Done(_, _) => panic!($err),
+                IResult::Done(_, _) => panic!("{}", $err),
                 _ => {},
             };
         };

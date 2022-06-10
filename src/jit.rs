@@ -6,8 +6,8 @@ use std::marker::PhantomData;
 
 use wsstd::Context;
 
-extern {
-    fn memset(s: *mut c::c_void, c: c::uint32_t, n: c::size_t) -> *mut c::c_void;
+extern "C" {
+    fn memset(s: *mut c::c_void, c: u32, n: c::size_t) -> *mut c::c_void;
 }
 
 pub struct JitMemory<'a> {

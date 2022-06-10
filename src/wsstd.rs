@@ -1,4 +1,3 @@
-#![feature(as_unsafe_cell)]
 
 extern crate libc;
 
@@ -35,8 +34,8 @@ pub struct Context {
     // maps literals to jump-to-able addresses in the function
     pub labels: HashMap<Label, Address>,
 
-    stdin: BufReader<Box<Read>>,
-    stdout: Rc<RefCell<Write>>,
+    stdin: BufReader<Box<dyn Read>>,
+    stdout: Rc<RefCell<dyn Write>>,
 }
 
 impl fmt::Debug for Context {
@@ -62,7 +61,7 @@ impl Context {
     }
 
     /// Allows capturing stdout; very useful for test cases
-    pub fn capture_stdout(&mut self, out: Rc<RefCell<Write>>) {
+    pub fn capture_stdout(&mut self, out: Rc<RefCell<dyn Write>>) {
         self.stdout = out;
     }
 
@@ -118,7 +117,7 @@ impl Context {
     /// Called from jit-ed code. Displays data to stdout.
     pub unsafe extern "C" fn print(&mut self, is_char: bool) {
         let num = self.peek_stack(0);
-        let out = self.stdout.as_unsafe_cell().get();
+        let mut out = self.stdout.borrow_mut();
         if is_char {
             write!(*out,
                    "{}",
