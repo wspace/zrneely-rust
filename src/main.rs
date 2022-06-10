@@ -1,5 +1,6 @@
 
 extern crate libc;
+extern crate memmap2;
 #[macro_use]
 extern crate nom;
 

@@ -1,23 +1,20 @@
 
 use libc as c;
-use std::mem::{forget, transmute, uninitialized};
+use memmap2::{Mmap, MmapMut};
+use std::mem::transmute;
 use std::ops::{Index, IndexMut};
 use std::marker::PhantomData;
 
 use wsstd::Context;
 
-extern "C" {
-    fn memset(s: *mut c::c_void, c: u32, n: c::size_t) -> *mut c::c_void;
-}
-
 pub struct JitMemory<'a> {
-    contents: *mut u8,
+    contents: MmapMut,
     size: usize,
     phantom: PhantomData<&'a mut Context>,
 }
 
 pub struct JitFunction<'a> {
-    contents: fn() -> i64,
+    contents: Mmap,
     size: usize,
     phantom: PhantomData<&'a mut Context>,
 }
@@ -30,27 +27,17 @@ impl<'a> JitMemory<'a> {
 
     pub fn new(num_pages: usize) -> Self {
         let page_size = JitMemory::get_page_size();
+        let size = num_pages * page_size;
 
-        unsafe {
-            let size = num_pages * page_size;
+        // Let's allocate space for the JIT function.
+        let mut page = MmapMut::map_anon(size).unwrap();
+        // Fill it with "int" (0xCC) to avoid using uninitialized memory.
+        page.fill(0xcc);
 
-            // Let's allocate space for the JIT function.
-            // It has to be aligned...
-            let mut page: *mut c::c_void = uninitialized();
-            c::posix_memalign(&mut page, page_size, size);
-
-            // ...and marked as writable.
-            c::mprotect(page, size, c::PROT_READ | c::PROT_WRITE);
-
-            // Fill it with "int" (0xCC) to avoid using uninitialized memory. This will
-            // cause a SIGTRAP immediately on execution.
-            memset(page, 0xcc, size);
-
-            JitMemory {
-                contents: transmute(page),
-                size: size,
-                phantom: PhantomData,
-            }
+        JitMemory {
+            contents: page,
+            size: size,
+            phantom: PhantomData,
         }
     }
 
@@ -62,43 +49,22 @@ impl<'a> JitMemory<'a> {
     }
 }
 
-impl<'a> Drop for JitMemory<'a> {
-    fn drop(&mut self) {
-        unsafe {
-            c::free(transmute(self.contents));
-        }
-    }
-}
-
-impl<'a> Drop for JitFunction<'a> {
-    fn drop(&mut self) {
-        unsafe {
-            c::free(transmute(self.contents));
-        }
-    }
-}
-
 impl<'a> JitFunction<'a> {
     pub fn execute(self) -> i64 {
-        (self.contents)()
+        let f: fn() -> i64 = unsafe {
+            transmute(self.contents.as_ptr())
+        };
+        f()
     }
 }
 
 impl<'a> Into<JitFunction<'a>> for JitMemory<'a> {
     fn into(self) -> JitFunction<'a> {
         // Mark the function as executable, but not writable.
-        unsafe {
-            c::mprotect(transmute(self.contents),
-                        self.size,
-                        c::PROT_READ | c::PROT_EXEC);
-            let function = JitFunction {
-                contents: transmute(self.contents),
-                size: self.size,
-                phantom: PhantomData,
-            };
-            // Don't call the destructor
-            forget(self);
-            function
+        JitFunction {
+            contents: self.contents.make_exec().unwrap(),
+            size: self.size,
+            phantom: PhantomData,
         }
     }
 }
@@ -106,18 +72,10 @@ impl<'a> Into<JitFunction<'a>> for JitMemory<'a> {
 impl<'a> Into<JitMemory<'a>> for JitFunction<'a> {
     fn into(self) -> JitMemory<'a> {
         // Mark the function as writable, but not executable.
-        unsafe {
-            c::mprotect(transmute(self.contents),
-                        self.size,
-                        c::PROT_READ | c::PROT_WRITE);
-            let memory = JitMemory {
-                contents: transmute(self.contents),
-                size: self.size,
-                phantom: PhantomData,
-            };
-            // Don't call the destructor
-            forget(self);
-            memory
+        JitMemory {
+            contents: self.contents.make_mut().unwrap(),
+            size: self.size,
+            phantom: PhantomData,
         }
     }
 }
@@ -129,7 +87,7 @@ impl<'a> Index<usize> for JitMemory<'a> {
         if _index > self.size {
             panic!("index {} out of bounds for JitMemory", _index);
         }
-        unsafe { &*self.contents.offset(_index as isize) }
+        &self.contents[_index]
     }
 }
 
@@ -138,7 +96,7 @@ impl<'a> IndexMut<usize> for JitMemory<'a> {
         if _index > self.size {
             panic!("index {} out of bounds for JitMemory", _index);
         }
-        unsafe { &mut *self.contents.offset(_index as isize) }
+        &mut self.contents[_index]
     }
 }
 

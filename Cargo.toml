@@ -5,6 +5,7 @@ authors = ["zrneely <zrneely@mit.edu>"]
 
 [dependencies]
 libc = "*"
+memmap2 = "0.5"
 nom = "3"
 
 [lib]
